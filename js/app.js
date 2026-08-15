@@ -1,10 +1,30 @@
-const { useState } = React;
+const { useState, useEffect } = React;
 
 function App() {
   const [currentSection, setCurrentSection] = useState('menu');
   
+  // Estado global sincronizado de eventos y actividades
+  const [items, setItems] = useState([
+    { type: 'clase', title: 'Clase IA & Algoritmos', date: '2026-08-17' },
+    { type: 'examen', title: 'Examen de Algoritmos', date: '2026-08-20' },
+    { type: 'parcial', title: 'Parcial Software II', date: '2026-08-25' },
+    { type: 'entregable', title: 'Proyecto Integrador SENATI', date: '2026-08-28' }
+  ]);
+
+  const handleAddItem = (newItem) => {
+    const updated = [...items, newItem];
+    setItems(updated);
+    
+    // Auto-sincronización con Google Drive
+    fetch('/api/drive/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: updated })
+    });
+  };
+
   const menuItems = [
-    {id:'calendario', name:'Calendario', icon:'📅'},
+    {id:'calendario', name:'Calendario General', icon:'📅'},
     {id:'clases', name:'Clases', icon:'📓'},
     {id:'examenes', name:'Exámenes & Eventos', icon:'📝'},
     {id:'parciales', name:'Parciales', icon:'🎓'},
@@ -41,15 +61,15 @@ function App() {
           </div>
         )}
 
-        {currentSection === 'calendario' && <CalendarioSection />}
-        {currentSection === 'clases' && <ClasesSection />}
-        {currentSection === 'examenes' && <ExamenesSection />}
-        {currentSection === 'parciales' && <ParcialesSection />}
-        {currentSection === 'entregables' && <EntregablesSection />}
-        {currentSection === 'cursos' && <CursosSection />}
+        {currentSection === 'calendario' && <CalendarioSection items={items} onAddItem={handleAddItem} />}
+        {currentSection === 'clases' && <ClasesSection items={items} onAddItem={handleAddItem} />}
+        {currentSection === 'examenes' && <ExamenesSection items={items} onAddItem={handleAddItem} />}
+        {currentSection === 'parciales' && <ParcialesSection items={items} onAddItem={handleAddItem} />}
+        {currentSection === 'entregables' && <EntregablesSection items={items} onAddItem={handleAddItem} />}
+        {currentSection === 'cursos' && <CursosSection items={items} onAddItem={handleAddItem} />}
       </main>
 
-      <AuroraSphere />
+      <AuroraSphere items={items} onUpdateItems={setItems} />
     </div>
   );
 }
