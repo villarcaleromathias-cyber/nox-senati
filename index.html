@@ -1,30 +1,561 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Nox - Agenda SENATI</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <link rel="stylesheet" href="./css/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Académico SENATI</title>
+    <!-- Lucide Icons & Tailwind CSS -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --senati-blue: #002B49;
+            --senati-accent: #005691;
+            --senati-light: #F0F4F8;
+        }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #F8FAFC;
+        }
+        .oneui-card {
+            border-radius: 28px;
+            box-shadow: 0 10px 30px -5px rgba(0, 43, 73, 0.05);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .oneui-input {
+            border-radius: 16px;
+            background-color: #F1F5F9;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .oneui-input:focus {
+            border-color: #005691;
+            background-color: #FFFFFF;
+            outline: none;
+        }
+        .oneui-btn {
+            border-radius: 20px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .oneui-btn:active {
+            transform: scale(0.96);
+        }
+    </style>
 </head>
-<body class="bg-black text-white font-sans antialiased selection:bg-purple-500 selection:text-white">
-  <div id="root"></div>
+<body class="text-slate-800 pb-20 md:pb-6">
 
-  <!-- Componentes -->
-  <script type="text/babel" src="./js/Examenes.js"></script>
-  <script type="text/babel" src="./js/Clases.js"></script>
-  <script type="text/babel" src="./js/Parciales.js"></script>
-  <script type="text/babel" src="./js/Entregables.js"></script>
-  <script type="text/babel" src="./js/Calendario.js"></script>
-  <script type="text/babel" src="./js/Cursos.js"></script>
-  <script type="text/babel" src="./js/Aurora.js"></script>
-  <script type="text/babel" src="./js/app.js"></script>
+    <!-- Header Principal -->
+    <header class="bg-[#002B49] text-white px-6 py-5 sticky top-0 z-40 shadow-lg rounded-b-[32px]">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2.5 rounded-2xl backdrop-blur-md">
+                    <i data-lucide="graduation-cap" class="w-7 h-7 text-blue-300"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl tracking-tight leading-tight">Portal SENATI</h1>
+                    <p class="text-xs text-blue-200">Gestión Académica & Asistente Aurora</p>
+                </div>
+            </div>
+            <!-- Filtro Global de Mes -->
+            <div class="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-2xl border border-white/10">
+                <i data-lucide="calendar" class="w-4 h-4 text-blue-200"></i>
+                <select id="globalMonthFilter" onchange="renderAll()" class="bg-transparent text-sm text-white font-medium focus:outline-none cursor-pointer">
+                    <option value="ALL" class="text-slate-800">Todos los Meses</option>
+                    <option value="0" class="text-slate-800">Enero</option>
+                    <option value="1" class="text-slate-800">Febrero</option>
+                    <option value="2" class="text-slate-800">Marzo</option>
+                    <option value="3" class="text-slate-800">Abril</option>
+                    <option value="4" class="text-slate-800">Mayo</option>
+                    <option value="5" class="text-slate-800">Junio</option>
+                    <option value="6" class="text-slate-800">Julio</option>
+                    <option value="7" class="text-slate-800">Agosto</option>
+                    <option value="8" class="text-slate-800">Setiembre</option>
+                    <option value="9" class="text-slate-800">Octubre</option>
+                    <option value="10" class="text-slate-800">Noviembre</option>
+                    <option value="11" class="text-slate-800">Diciembre</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Columna Izquierda: Cursos y Acciones -->
+        <section class="space-y-6">
+            <!-- Gestión de Cursos -->
+            <div class="bg-white p-6 oneui-card border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-[#002B49] flex items-center gap-2">
+                        <i data-lucide="book-open" class="w-5 h-5 text-[#005691]"></i> Cursos
+                    </h2>
+                    <button onclick="openCourseModal()" class="oneui-btn bg-[#005691] text-white px-3 py-1.5 text-xs flex items-center gap-1 hover:bg-[#002B49]">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Añadir Curso
+                    </button>
+                </div>
+                <div id="coursesList" class="space-y-2">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Asistente de Voz / Texto Aurora -->
+            <div class="bg-white p-6 oneui-card border border-slate-100 relative overflow-hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <h2 class="text-lg font-bold text-[#002B49]">IA Aurora</h2>
+                    </div>
+                    <button id="micBtn" onclick="toggleSpeech()" class="oneui-btn p-3 bg-blue-50 text-[#005691] hover:bg-blue-100">
+                        <i data-lucide="mic" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mb-3">Puedes pedirle a Aurora: <i>"Añadir curso Programación con color verde"</i> o <i>"Añadir examen Final de Redes para el 20 de Octubre"</i>.</p>
+                <div id="chatBox" class="h-40 overflow-y-auto bg-slate-50 p-3 rounded-2xl mb-3 text-xs space-y-2 border border-slate-100">
+                    <div class="bg-white p-2.5 rounded-xl shadow-sm text-slate-700">¡Hola! Soy Aurora. Ahora sí puedo gestionar tus clases, exámenes y materiales directamente por ti.</div>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="chatInput" placeholder="Escribe tu comando..." class="w-full oneui-input px-3 py-2 text-xs">
+                    <button onclick="sendChatMessage()" class="oneui-btn bg-[#002B49] text-white px-4 py-2 text-xs">Enviar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Columna Central/Derecha: Clases, Evaluaciones y Entregables -->
+        <section class="lg:col-span-2 space-y-6">
+
+            <!-- Acciones Rápidas -->
+            <div class="flex flex-wrap gap-2">
+                <button onclick="openClassModal()" class="oneui-btn bg-white border border-slate-200 text-[#002B49] px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm hover:border-[#005691]">
+                    <i data-lucide="clock" class="w-4 h-4 text-[#005691]"></i> + Horario/Clase
+                </button>
+                <button onclick="openExamModal()" class="oneui-btn bg-white border border-slate-200 text-[#002B49] px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm hover:border-[#005691]">
+                    <i data-lucide="file-text" class="w-4 h-4 text-[#005691]"></i> + Examen/Parcial
+                </button>
+                <button onclick="openTaskModal()" class="oneui-btn bg-white border border-slate-200 text-[#002B49] px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm hover:border-[#005691]">
+                    <i data-lucide="check-square" class="w-4 h-4 text-[#005691]"></i> + Entregable
+                </button>
+                <button onclick="openMaterialModal()" class="oneui-btn bg-white border border-slate-200 text-[#002B49] px-4 py-2.5 text-xs flex items-center gap-2 shadow-sm hover:border-[#005691]">
+                    <i data-lucide="folder" class="w-4 h-4 text-[#005691]"></i> + Material
+                </button>
+            </div>
+
+            <!-- Clases y Horarios -->
+            <div class="bg-white p-6 oneui-card border border-slate-100">
+                <h2 class="text-lg font-bold text-[#002B49] mb-4 flex items-center gap-2">
+                    <i data-lucide="calendar-days" class="w-5 h-5 text-[#005691]"></i> Clases y Horarios
+                </h2>
+                <div id="classesList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Exámenes y Parciales -->
+            <div class="bg-white p-6 oneui-card border border-slate-100">
+                <h2 class="text-lg font-bold text-[#002B49] mb-4 flex items-center gap-2">
+                    <i data-lucide="award" class="w-5 h-5 text-[#005691]"></i> Exámenes y Evaluaciones
+                </h2>
+                <div id="examsList" class="space-y-3">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Entregables / Trabajos -->
+            <div class="bg-white p-6 oneui-card border border-slate-100">
+                <h2 class="text-lg font-bold text-[#002B49] mb-4 flex items-center gap-2">
+                    <i data-lucide="check-circle-2" class="w-5 h-5 text-[#005691]"></i> Entregables Pendientes
+                </h2>
+                <div id="tasksList" class="space-y-3">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+            <!-- Materiales del Curso -->
+            <div class="bg-white p-6 oneui-card border border-slate-100">
+                <h2 class="text-lg font-bold text-[#002B49] mb-4 flex items-center gap-2">
+                    <i data-lucide="files" class="w-5 h-5 text-[#005691]"></i> Materiales de Estudio
+                </h2>
+                <div id="materialsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- MODAL GENERAL DINÁMICO -->
+    <div id="modalContainer" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-md p-6 oneui-card shadow-2xl relative">
+            <h3 id="modalTitle" class="text-xl font-bold text-[#002B49] mb-4">Modal</h3>
+            <form id="modalForm" onsubmit="handleModalSubmit(event)" class="space-y-4">
+                <div id="modalFields" class="space-y-3"></div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal()" class="oneui-btn px-4 py-2 bg-slate-100 text-slate-600 text-xs hover:bg-slate-200">Cancelar</button>
+                    <button type="submit" class="oneui-btn px-4 py-2 bg-[#005691] text-white text-xs hover:bg-[#002B49]">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOGICA DE LA APLICACIÓN -->
+    <script>
+        // Estado Global con Persistencia LocalStorage
+        let appState = JSON.parse(localStorage.getItem('senati_app_data')) || {
+            courses: [
+                { id: '1', name: 'Software Engineering', color: '#005691' },
+                { id: '2', name: 'Redes y Telecomunicaciones', color: '#10B981' }
+            ],
+            classes: [],
+            exams: [],
+            tasks: [],
+            materials: []
+        };
+
+        let currentModalType = '';
+        let currentEditId = null;
+
+        function saveData() {
+            localStorage.setItem('senati_app_data', JSON.stringify(appState));
+            renderAll();
+        }
+
+        function filterByMonth(dateString) {
+            const selectedMonth = document.getElementById('globalMonthFilter').value;
+            if (selectedMonth === 'ALL' || !dateString) return true;
+            const itemDate = new Date(dateString);
+            return itemDate.getMonth() === parseInt(selectedMonth);
+        }
+
+        // --- RENDERIZADO COMPLETO ---
+        function renderAll() {
+            renderCourses();
+            renderClasses();
+            renderExams();
+            renderTasks();
+            renderMaterials();
+            lucide.createIcons();
+        }
+
+        function getCourse(id) {
+            return appState.courses.find(c => c.id === id) || { name: 'General', color: '#64748B' };
+        }
+
+        function renderCourses() {
+            const container = document.getElementById('coursesList');
+            container.innerHTML = appState.courses.length ? '' : '<p class="text-xs text-slate-400">No hay cursos registrados.</p>';
+            appState.courses.forEach(course => {
+                container.innerHTML += `
+                    <div class="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
+                        <div class="flex items-center gap-3">
+                            <span class="w-4 h-4 rounded-full" style="background-color: ${course.color}"></span>
+                            <span class="font-semibold text-sm text-slate-700">${course.name}</span>
+                        </div>
+                        <button onclick="deleteCourse('${course.id}')" class="text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderClasses() {
+            const container = document.getElementById('classesList');
+            const items = appState.classes.filter(item => filterByMonth(item.date));
+            container.innerHTML = items.length ? '' : '<p class="text-xs text-slate-400 col-span-2">No hay clases programadas para este filtro.</p>';
+            items.forEach(item => {
+                const course = getCourse(item.courseId);
+                container.innerHTML += `
+                    <div class="p-4 rounded-2xl border-l-4 bg-slate-50" style="border-left-color: ${course.color}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">${course.name}</span>
+                                <h4 class="font-bold text-sm text-slate-800">${item.title}</h4>
+                            </div>
+                            <button onclick="deleteItem('classes', '${item.id}')" class="text-slate-400 hover:text-red-500"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="mt-2 text-xs text-slate-500 space-y-1">
+                            <div class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${item.date}</div>
+                            <div class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${item.time}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderExams() {
+            const container = document.getElementById('examsList');
+            const items = appState.exams.filter(item => filterByMonth(item.date));
+            container.innerHTML = items.length ? '' : '<p class="text-xs text-slate-400">No hay exámenes programados.</p>';
+            items.forEach(item => {
+                const course = getCourse(item.courseId);
+                container.innerHTML += `
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl text-white" style="background-color: ${course.color}">
+                                <i data-lucide="file-check" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">${item.type}</span>
+                                <h4 class="font-bold text-sm text-slate-800 mt-0.5">${item.title} - ${course.name}</h4>
+                                <p class="text-xs text-slate-500">${item.date} | ${item.time}</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteItem('exams', '${item.id}')" class="text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksList');
+            const items = appState.tasks.filter(item => filterByMonth(item.dueDate));
+            container.innerHTML = items.length ? '' : '<p class="text-xs text-slate-400">No hay entregables registrados.</p>';
+            items.forEach(item => {
+                const course = getCourse(item.courseId);
+                container.innerHTML += `
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <span class="text-[10px] font-bold text-white px-2 py-0.5 rounded-md" style="background-color: ${course.color}">${course.name}</span>
+                            <h4 class="font-bold text-sm text-slate-800">${item.title}</h4>
+                            <p class="text-xs text-slate-600">${item.description}</p>
+                            <p class="text-[11px] text-slate-400">Fecha límite: ${item.dueDate}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openTaskModal('${item.id}')" class="p-2 bg-slate-200 text-slate-600 rounded-xl hover:bg-slate-300"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteItem('tasks', '${item.id}')" class="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderMaterials() {
+            const container = document.getElementById('materialsList');
+            const items = appState.materials;
+            container.innerHTML = items.length ? '' : '<p class="text-xs text-slate-400 col-span-2">No hay materiales cargados.</p>';
+            items.forEach(item => {
+                const course = getCourse(item.courseId);
+                container.innerHTML += `
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="file-code" class="w-5 h-5 text-[#005691]"></i>
+                            <div>
+                                <h5 class="text-xs font-bold text-slate-800">${item.title}</h5>
+                                <a href="${item.url}" target="_blank" class="text-[11px] text-blue-600 underline">${item.url}</a>
+                            </div>
+                        </div>
+                        <button onclick="deleteItem('materials', '${item.id}')" class="text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        // --- SISTEMA DE MODALES Y FORMULARIOS ---
+        function openModal(title, fields, type, editId = null) {
+            currentModalType = type;
+            currentEditId = editId;
+            document.getElementById('modalTitle').innerText = title;
+            const container = document.getElementById('modalFields');
+            container.innerHTML = '';
+
+            fields.forEach(f => {
+                let inputHtml = '';
+                if (f.type === 'select') {
+                    inputHtml = `<select name="${f.name}" class="w-full oneui-input px-3 py-2 text-xs">
+                        ${f.options.map(opt => `<option value="${opt.id}">${opt.name}</option>`).join('')}
+                    </select>`;
+                } else if (f.type === 'textarea') {
+                    inputHtml = `<textarea name="${f.name}" placeholder="${f.placeholder || ''}" class="w-full oneui-input px-3 py-2 text-xs h-20">${f.value || ''}</textarea>`;
+                } else {
+                    inputHtml = `<input type="${f.type}" name="${f.name}" value="${f.value || ''}" placeholder="${f.placeholder || ''}" class="w-full oneui-input px-3 py-2 text-xs" required>`;
+                }
+
+                container.innerHTML += `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">${f.label}</label>
+                        ${inputHtml}
+                    </div>
+                `;
+            });
+
+            document.getElementById('modalContainer').classList.remove('hidden');
+            document.getElementById('modalContainer').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('modalContainer').classList.add('hidden');
+            document.getElementById('modalContainer').classList.remove('flex');
+        }
+
+        function handleModalSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.id = currentEditId || Date.now().toString();
+
+            if (currentModalType === 'course') {
+                appState.courses.push(data);
+            } else if (currentModalType === 'class') {
+                appState.classes.push(data);
+            } else if (currentModalType === 'exam') {
+                appState.exams.push(data);
+            } else if (currentModalType === 'task') {
+                if (currentEditId) {
+                    const idx = appState.tasks.findIndex(t => t.id === currentEditId);
+                    if (idx !== -1) appState.tasks[idx] = data;
+                } else {
+                    appState.tasks.push(data);
+                }
+            } else if (currentModalType === 'material') {
+                appState.materials.push(data);
+            }
+
+            saveData();
+            closeModal();
+        }
+
+        // TRIGGERS PARA MODALES
+        function openCourseModal() {
+            openModal('Añadir Nuevo Curso', [
+                { label: 'Nombre del Curso', name: 'name', type: 'text', placeholder: 'Ej. Inteligencia Artificial' },
+                { label: 'Color Distintivo', name: 'color', type: 'color', value: '#005691' }
+            ], 'course');
+        }
+
+        function openClassModal() {
+            openModal('Añadir Horario de Clase', [
+                { label: 'Curso', name: 'courseId', type: 'select', options: appState.courses },
+                { label: 'Título de la Clase / Tema', name: 'title', type: 'text', placeholder: 'Ej. Introducción a BD' },
+                { label: 'Fecha', name: 'date', type: 'date' },
+                { label: 'Hora', name: 'time', type: 'time' }
+            ], 'class');
+        }
+
+        function openExamModal() {
+            openModal('Añadir Examen / Parcial', [
+                { label: 'Curso', name: 'courseId', type: 'select', options: appState.courses },
+                { label: 'Título de la Evaluación', name: 'title', type: 'text', placeholder: 'Ej. Examen Parcial T1' },
+                { label: 'Tipo de Evaluacion', name: 'type', type: 'select', options: [{id: 'Parcial', name: 'Parcial'}, {id: 'Final', name: 'Final'}, {id: 'Quizz', name: 'Quizz'}] },
+                { label: 'Fecha', name: 'date', type: 'date' },
+                { label: 'Hora', name: 'time', type: 'time' }
+            ], 'exam');
+        }
+
+        function openTaskModal(editId = null) {
+            const task = editId ? appState.tasks.find(t => t.id === editId) : {};
+            openModal(editId ? 'Editar Entregable' : 'Añadir Entregable / Trabajo', [
+                { label: 'Curso', name: 'courseId', type: 'select', options: appState.courses },
+                { label: 'Título del Trabajo', name: 'title', type: 'text', value: task.title || '', placeholder: 'Ej. Proyecto Integrador' },
+                { label: 'Detalles/Instrucciones', name: 'description', type: 'textarea', value: task.description || '' },
+                { label: 'Fecha Límite de Entrega', name: 'dueDate', type: 'date', value: task.dueDate || '' }
+            ], 'task', editId);
+        }
+
+        function openMaterialModal() {
+            openModal('Añadir Material del Curso', [
+                { label: 'Curso', name: 'courseId', type: 'select', options: appState.courses },
+                { label: 'Título del Documento / Guía', name: 'title', type: 'text', placeholder: 'Ej. Manual de Laboratorio 01' },
+                { label: 'Enlace / URL del Archivo', name: 'url', type: 'text', placeholder: 'https://...' }
+            ], 'material');
+        }
+
+        function deleteItem(collection, id) {
+            appState[collection] = appState[collection].filter(item => item.id !== id);
+            saveData();
+        }
+
+        function deleteCourse(id) {
+            appState.courses = appState.courses.filter(c => c.id !== id);
+            saveData();
+        }
+
+        // --- NÚCLEO INTERACTIVO DE AURORA (ASISTENTE IA) ---
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addChatMessage('user', text);
+            input.value = '';
+
+            processAuroraCommand(text);
+        }
+
+        function addChatMessage(sender, text) {
+            const chatBox = document.getElementById('chatBox');
+            const isUser = sender === 'user';
+            chatBox.innerHTML += `
+                <div class="${isUser ? 'bg-[#005691] text-white ml-auto' : 'bg-white text-slate-700 shadow-sm'} p-2.5 rounded-xl max-w-[85%] text-xs">
+                    ${text}
+                </div>
+            `;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function processAuroraCommand(cmd) {
+            const lower = cmd.toLowerCase();
+
+            // Comando agregar curso
+            if (lower.includes('añadir curso') || lower.includes('agregar curso')) {
+                const nameMatch = cmd.match(/(?:curso)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+)/i);
+                const name = nameMatch ? nameMatch[1].replace(/con color.*/i, '').trim() : 'Nuevo Curso IA';
+                const newCourse = { id: Date.now().toString(), name: name, color: '#005691' };
+                appState.courses.push(newCourse);
+                saveData();
+                addChatMessage('aurora', `✅ He creado el curso "${name}" con éxito.`);
+                return;
+            }
+
+            // Comando agregar examen
+            if (lower.includes('añadir examen') || lower.includes('agregar examen')) {
+                const titleMatch = cmd.match(/(?:examen)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+)/i);
+                const title = titleMatch ? titleMatch[1].trim() : 'Examen Programado';
+                const newExam = {
+                    id: Date.now().toString(),
+                    courseId: appState.courses[0]?.id || '1',
+                    title: title,
+                    type: 'Parcial',
+                    date: new Date().toISOString().split('T')[0],
+                    time: '08:00'
+                };
+                appState.exams.push(newExam);
+                saveData();
+                addChatMessage('aurora', `📝 He registrado el examen "${title}" para la fecha actual.`);
+                return;
+            }
+
+            // Respuesta por defecto
+            addChatMessage('aurora', 'Comando procesado. Puedo ayudarte a agregar cursos o exámenes respondiendo a órdenes directas.');
+        }
+
+        // --- INTEGRACIÓN RECONOCIMIENTO DE VOZ ---
+        let recognition = null;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-PE';
+            recognition.continuous = false;
+
+            recognition.onresult = (e) => {
+                const text = e.results[0][0].transcript;
+                document.getElementById('chatInput').value = text;
+                sendChatMessage();
+            };
+
+            recognition.onerror = () => {
+                addChatMessage('aurora', 'No pude escuchar el audio claramente. Intenta de nuevo.');
+            };
+        }
+
+        function toggleSpeech() {
+            if (!recognition) {
+                alert('El reconocimiento de voz no está soportado en este navegador.');
+                return;
+            }
+            recognition.start();
+            addChatMessage('aurora', '🎤 Escuchando tu comando...');
+        }
+
+        // Inicialización
+        window.onload = renderAll;
+    </script>
 </body>
 </html>
