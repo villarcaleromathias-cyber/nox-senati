@@ -1,13 +1,20 @@
+html, body {
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
 .card-nox {
   background-color: #09090b;
   border: 1px solid #27272a;
 }
+
+/* Esfera interactiva de Aurora IA para Móvil y Desktop */
 .aurora-sphere {
   position: fixed;
-  bottom: 20px;
+  bottom: 24px;
   right: 20px;
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #c084fc, #3b82f6, #000);
   box-shadow: 0 0 20px rgba(192, 132, 252, 0.6), inset 0 0 10px rgba(255,255,255,0.5);
@@ -17,12 +24,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 22px;
+  -webkit-tap-highlight-color: transparent;
 }
+
 @keyframes pulse {
   0% { transform: scale(1); box-shadow: 0 0 20px rgba(192, 132, 252, 0.6); }
-  100% { transform: scale(1.1); box-shadow: 0 0 40px rgba(192, 132, 252, 0.9); }
+  100% { transform: scale(1.08); box-shadow: 0 0 35px rgba(192, 132, 252, 0.9); }
 }
+
 @keyframes spin {
   100% { transform: rotate(360deg); }
+}
+
+/* Ajustes responsivos para pantallas pequeñas */
+@media (max-width: 640px) {
+  .aurora-sphere {
+    width: 50px;
+    height: 50px;
+    bottom: 20px;
+    right: 16px;
+    font-size: 20px;
+  }
 }
