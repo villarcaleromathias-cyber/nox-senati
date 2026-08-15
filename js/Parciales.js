@@ -1,19 +1,55 @@
-window.ParcialesSection = function ParcialesSection() {
-  const currentMonthName = new Date().toLocaleString('es-ES', { month: 'long' });
-  const semanas = [1, 2, 3, 4].map(num => `Semana ${num} - Parciales (${currentMonthName})`);
+const { useState } = React;
+
+window.ParcialesSection = function ParcialesSection({ items = [], onAddItem }) {
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth());
+
+  const now = new Date();
+  const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
+
+  const changeMonth = (dir) => {
+    let newMonth = month + dir;
+    let newYear = year;
+    if (newMonth > 11) { newMonth = 0; newYear++; }
+    if (newMonth < 0) { newMonth = 11; newYear--; }
+    setMonth(newMonth); setYear(newYear);
+  };
+
+  const monthName = new Date(year, month).toLocaleString('es-ES', { month: 'long' });
+  const semanas = [1, 2, 3, 4].map(num => `Semana ${num} - Parciales (${monthName} ${year})`);
   const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4">Calendario de Parciales</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 card-nox p-4 sm:p-6 rounded-3xl">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold capitalize">Evaluaciones Parciales</h2>
+          {isCurrentMonth && (
+            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-bold flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Mes Actual
+            </span>
+          )}
+        </div>
+
+        <div className="flex gap-2 items-center">
+          <button onClick={() => changeMonth(-1)} className="p-2 bg-zinc-900 hover:bg-zinc-800 rounded-xl active:scale-95 transition font-bold text-xs sm:text-sm">← Anterior</button>
+          <button onClick={() => changeMonth(1)} className="p-2 bg-zinc-900 hover:bg-zinc-800 rounded-xl active:scale-95 transition font-bold text-xs sm:text-sm">Siguiente →</button>
+        </div>
+      </div>
+
       {semanas.map((semanaNom, semIdx) => (
         <div key={semIdx} className="card-nox p-4 sm:p-5 rounded-3xl border-purple-900/30">
-          <h3 className="font-bold text-base sm:text-lg mb-4 text-red-400 capitalize">{semanaNom}</h3>
+          <h3 className="font-bold text-base sm:text-lg mb-4 text-purple-400 capitalize">{semanaNom}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
             {dias.map(dia => (
               <div key={dia} className="p-2.5 rounded-2xl bg-zinc-950 border border-zinc-900 min-h-[100px] flex flex-col justify-between">
-                <span className="text-xs font-bold text-red-500/70">{dia}</span>
-                <button className="w-full mt-2 py-1.5 text-[10px] bg-red-950/30 text-red-400 rounded-lg hover:bg-red-900/50 active:scale-95 transition">+ Eval.</button>
+                <span className="text-xs font-bold text-purple-400/80">{dia}</span>
+                <button 
+                  onClick={() => onAddItem({ type: 'parcial', title: `Parcial ${dia}`, date: new Date(year, month, (semIdx * 7) + 1).toISOString().split('T')[0] })}
+                  className="w-full mt-2 py-1.5 text-[10px] bg-purple-950/30 text-purple-400 rounded-lg hover:bg-purple-900/50 active:scale-95 transition"
+                >
+                  + Eval.
+                </button>
               </div>
             ))}
           </div>
