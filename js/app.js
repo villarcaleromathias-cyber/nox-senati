@@ -1,78 +1,80 @@
-const { useState, useEffect } = React;
+import React, { useState } from 'react';
+import VistasCombinadas from './components/VistasCombinadas';
+import AuroraBall from './components/AuroraBall';
 
-function App() {
-  const [currentSection, setCurrentSection] = useState('menu');
+export default function App() {
+  const [currentTab, setCurrentTab] = useState('clases');
   
-  // Estado global sincronizado de eventos y actividades
-  const [items, setItems] = useState([
-    { type: 'clase', title: 'Clase IA & Algoritmos', date: '2026-08-17' },
-    { type: 'examen', title: 'Examen de Algoritmos', date: '2026-08-20' },
-    { type: 'parcial', title: 'Parcial Software II', date: '2026-08-25' },
-    { type: 'entregable', title: 'Proyecto Integrador SENATI', date: '2026-08-28' }
-  ]);
+  // Base de datos temporal en memoria
+  const [cursos, setCursos] = useState([]);
+  const [clases, setClases] = useState([]);
+  const [examenes, setExamenes] = useState([]);
+  const [entregables, setEntregables] = useState([]);
 
-  const handleAddItem = (newItem) => {
-    const updated = [...items, newItem];
-    setItems(updated);
-    
-    // Auto-sincronización con Google Drive
-    fetch('/api/drive/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: updated })
-    });
+  // Paleta de colores para los cursos
+  const colores = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-yellow-500', 'bg-pink-500', 'bg-cyan-500', 'bg-orange-500'];
+
+  const handleCrearCurso = (nombre) => {
+    const color = colores[cursos.length % colores.length]; // Asigna un color único
+    setCursos([...cursos, { id: Date.now(), nombre, color }]);
   };
 
-  const menuItems = [
-    {id:'calendario', name:'Calendario General', icon:'📅'},
-    {id:'clases', name:'Clases', icon:'📓'},
-    {id:'examenes', name:'Exámenes & Eventos', icon:'📝'},
-    {id:'parciales', name:'Parciales', icon:'🎓'},
-    {id:'entregables', name:'Entregables', icon:'🚀'},
-    {id:'cursos', name:'Cursos & Materiales', icon:'📚'}
+  // Función que Aurora usará para ejecutar acciones reales
+  const ejecutarComandoIA = (comando) => {
+    try {
+      const { tipo, datos } = comando;
+      if (tipo === 'ADD_CURSO') handleCrearCurso(datos.curso);
+      if (tipo === 'ADD_ENTREGABLE') setEntregables([...entregables, { id: Date.now(), ...datos }]);
+      if (tipo === 'ADD_CLASE') setClases([...clases, { id: Date.now(), ...datos }]);
+      if (tipo === 'ADD_EXAMEN') setExamenes([...examenes, { id: Date.now(), ...datos }]);
+    } catch (e) {
+      console.error("Error ejecutando comando de IA", e);
+    }
+  };
+
+  const tabs = [
+    { id: 'clases', icon: '📓', label: 'Clases' },
+    { id: 'parciales', icon: '🎓', label: 'Parciales' },
+    { id: 'examenes', icon: '📄', label: 'Exámenes' },
+    { id: 'entregables', icon: '📁', label: 'Entregables' },
+    { id: 'cursos', icon: '📚', label: 'Cursos' }
   ];
 
   return (
-    <div className="min-h-screen pb-24">
-      <header className="p-4 sm:p-6 border-b border-zinc-900 flex justify-between items-center bg-black/90 backdrop-blur-md sticky top-0 z-30">
-        <h1 className="text-2xl sm:text-3xl font-black tracking-widest text-purple-400 cursor-pointer active:scale-95 transition" onClick={() => setCurrentSection('menu')}>NOX</h1>
-        <div className="text-xs sm:text-sm text-zinc-400 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">Panel SENATI</div>
+    <div className="min-h-screen bg-[#090d16] text-white font-sans p-4 relative selection:bg-cyan-500 selection:text-black">
+      <header className="max-w-7xl mx-auto mb-6 flex justify-between border-b border-slate-800 pb-4">
+        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+          SENATI <span className="text-xs bg-blue-950 border border-blue-500 rounded-full px-2 py-1 text-white">PRO</span>
+        </h1>
       </header>
 
-      <main className="max-w-7xl mx-auto p-4 sm:p-6">
-        {currentSection !== 'menu' && (
-          <button onClick={() => setCurrentSection('menu')} className="mb-6 text-xs sm:text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1 font-semibold active:scale-95 transition">
-            ← Volver al menú
+      {/* Menú de Navegación Mejorado */}
+      <nav className="max-w-7xl mx-auto flex flex-wrap gap-4 mb-8">
+        {tabs.map(tab => (
+          <button 
+            key={tab.id}
+            onClick={() => setCurrentTab(tab.id)}
+            className={`flex items-center gap-2 px-6 py-4 rounded-2xl font-bold transition-all ${
+              currentTab === tab.id ? 'bg-[#1e293b] border-2 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)]' : 'bg-[#111827] border border-slate-800 hover:border-slate-600'
+            }`}
+          >
+            <span className="text-2xl">{tab.icon}</span> {tab.label}
           </button>
-        )}
+        ))}
+      </nav>
 
-        {currentSection === 'menu' && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-            {menuItems.map(item => (
-              <div 
-                key={item.id} 
-                onClick={() => setCurrentSection(item.id)} 
-                className="card-nox p-6 sm:p-8 rounded-3xl cursor-pointer hover:bg-zinc-900 active:scale-95 transition flex flex-col items-center justify-center text-center group"
-              >
-                <span className="text-4xl sm:text-5xl mb-3 group-hover:scale-110 transition">{item.icon}</span>
-                <h3 className="font-bold text-sm sm:text-lg text-zinc-200 group-hover:text-purple-400 transition">{item.name}</h3>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {currentSection === 'calendario' && <CalendarioSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'clases' && <ClasesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'examenes' && <ExamenesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'parciales' && <ParcialesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'entregables' && <EntregablesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'cursos' && <CursosSection items={items} onAddItem={handleAddItem} />}
+      {/* Vistas (Le pasamos todos los datos y funciones) */}
+      <main className="max-w-7xl mx-auto">
+        <VistasCombinadas 
+          tab={currentTab} 
+          cursos={cursos} handleCrearCurso={handleCrearCurso}
+          clases={clases} setClases={setClases}
+          examenes={examenes} setExamenes={setExamenes}
+          entregables={entregables} setEntregables={setEntregables}
+        />
       </main>
 
-      <AuroraSphere items={items} onUpdateItems={setItems} />
+      <AuroraBall onAccionIA={ejecutarComandoIA} />
     </div>
   );
 }
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
