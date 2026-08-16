@@ -1,49 +1,1016 @@
-html, body {
+html,
+body {
   overflow-x: hidden;
   touch-action: manipulation;
+  font-family: Inter, system-ui, sans-serif;
 }
 
-.card-nox {
-  background-color: #09090b;
-  border: 1px solid #27272a;
+* {
+  box-sizing: border-box;
 }
 
-/* Esfera interactiva de Aurora IA para Móvil y Desktop */
-.aurora-sphere {
-  position: fixed;
-  bottom: 24px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #c084fc, #3b82f6, #000);
-  box-shadow: 0 0 20px rgba(192, 132, 252, 0.6), inset 0 0 10px rgba(255,255,255,0.5);
-  animation: pulse 3s infinite alternate, spin 10s linear infinite;
-  cursor: pointer;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
   -webkit-tap-highlight-color: transparent;
 }
 
+.card-nox {
+  background: #09090b;
+  border: 1px solid #27272a;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+}
+
+.nox-btn {
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: #d4d4d8;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: 0.15s;
+}
+
+.nox-btn:hover {
+  background: #27272a;
+  color: #fff;
+}
+
+.nox-btn.danger:hover {
+  background: #3f1515;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+.nox-primary {
+  background:
+    linear-gradient(
+      135deg,
+      #7c3aed,
+      #2563eb
+    );
+
+  color: #fff;
+
+  border: 0;
+
+  padding:
+    0.65rem
+    1rem;
+
+  border-radius:
+    0.8rem;
+
+  font-size:
+    0.8rem;
+
+  font-weight:
+    800;
+
+  transition:
+    0.15s;
+}
+
+.nox-primary:hover {
+  filter:
+    brightness(1.12);
+
+  transform:
+    translateY(-1px);
+}
+
+.nox-input {
+  width: 100%;
+
+  margin-top:
+    0.35rem;
+
+  background:
+    #09090b;
+
+  border:
+    1px solid
+    #3f3f46;
+
+  color:
+    #fff;
+
+  border-radius:
+    0.8rem;
+
+  padding:
+    0.7rem
+    0.8rem;
+
+  outline:
+    none;
+}
+
+.nox-input:focus {
+  border-color:
+    #8b5cf6;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(
+      139,
+      92,
+      246,
+      0.12
+    );
+}
+
+.field-label {
+  display:
+    block;
+
+  font-size:
+    0.72rem;
+
+  font-weight:
+    700;
+
+  color:
+    #a1a1aa;
+}
+
+.nox-icon {
+  width:
+    2.2rem;
+
+  height:
+    2.2rem;
+
+  border-radius:
+    0.7rem;
+
+  background:
+    #18181b;
+
+  color:
+    #fff;
+
+  font-size:
+    1.3rem;
+}
+
+.calendar-day {
+  min-height:
+    110px;
+
+  padding:
+    0.55rem;
+
+  text-align:
+    left;
+
+  border:
+    1px solid
+    #27272a;
+
+  border-radius:
+    1rem;
+
+  background:
+    #09090b;
+
+  color:
+    #e4e4e7;
+
+  transition:
+    0.15s;
+}
+
+.calendar-day:hover {
+  border-color:
+    #6d28d9;
+
+  background:
+    #101014;
+}
+
+.calendar-day.today {
+  border-color:
+    #8b5cf6;
+
+  box-shadow:
+    inset
+    0 0 0 1px
+    rgba(
+      139,
+      92,
+      246,
+      0.3
+    );
+}
+
+.calendar-day
+.add-day {
+  display:
+    block;
+
+  margin-top:
+    0.4rem;
+
+  color:
+    #71717a;
+
+  font-size:
+    9px;
+}
+
+.event-chip {
+  border-radius:
+    0.45rem;
+
+  padding:
+    0.18rem
+    0.3rem;
+
+  font-size:
+    9px;
+
+  line-height:
+    1.25;
+
+  border:
+    1px solid
+    transparent;
+
+  overflow:
+    hidden;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.event-chip.blue,
+.legend.blue {
+  color:
+    #bfdbfe;
+
+  background:
+    #172554;
+
+  border-color:
+    #1d4ed8;
+}
+
+.event-chip.red,
+.legend.red {
+  color:
+    #fecaca;
+
+  background:
+    #450a0a;
+
+  border-color:
+    #991b1b;
+}
+
+.event-chip.purple,
+.legend.purple {
+  color:
+    #ddd6fe;
+
+  background:
+    #2e1065;
+
+  border-color:
+    #7c3aed;
+}
+
+.event-chip.yellow,
+.legend.yellow {
+  color:
+    #fef08a;
+
+  background:
+    #422006;
+
+  border-color:
+    #a16207;
+}
+
+.legend {
+  padding:
+    0.3rem
+    0.5rem;
+
+  border-radius:
+    0.5rem;
+
+  font-weight:
+    700;
+}
+
+.modal-backdrop {
+  position:
+    fixed;
+
+  inset:
+    0;
+
+  z-index:
+    200;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  padding:
+    1rem;
+
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.78
+    );
+
+  backdrop-filter:
+    blur(6px);
+}
+
+.modal-card {
+  width:
+    min(
+      560px,
+      100%
+    );
+
+  max-height:
+    90vh;
+
+  overflow:
+    auto;
+
+  background:
+    #09090b;
+
+  border:
+    1px solid
+    #3f3f46;
+
+  border-radius:
+    1.5rem;
+
+  padding:
+    1.25rem;
+
+  box-shadow:
+    0 30px 80px
+    rgba(
+      0,
+      0,
+      0,
+      0.55
+    );
+}
+
+.notification-button {
+  position:
+    relative;
+
+  width:
+    40px;
+
+  height:
+    40px;
+
+  border-radius:
+    12px;
+
+  background:
+    #18181b;
+
+  border:
+    1px solid
+    #27272a;
+}
+
+.notification-button b {
+  position:
+    absolute;
+
+  right:
+    -3px;
+
+  top:
+    -4px;
+
+  min-width:
+    18px;
+
+  height:
+    18px;
+
+  border-radius:
+    999px;
+
+  background:
+    #ef4444;
+
+  color:
+    #fff;
+
+  font-size:
+    10px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+}
+
+.notification-panel {
+  position:
+    absolute;
+
+  right:
+    1rem;
+
+  top:
+    70px;
+
+  width:
+    min(
+      390px,
+      calc(
+        100vw - 2rem
+      )
+    );
+
+  background:
+    #09090b;
+
+  border:
+    1px solid
+    #3f3f46;
+
+  border-radius:
+    1.2rem;
+
+  padding:
+    1rem;
+
+  box-shadow:
+    0 20px 60px
+    rgba(
+      0,
+      0,
+      0,
+      0.5
+    );
+}
+
+.notification-row {
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  gap:
+    1rem;
+
+  padding:
+    0.7rem 0;
+
+  border-top:
+    1px solid
+    #27272a;
+
+  font-size:
+    0.75rem;
+}
+
+.notification-row span {
+  display:
+    block;
+
+  color:
+    #71717a;
+
+  margin-top:
+    0.2rem;
+}
+
+.notification-row strong {
+  color:
+    #a78bfa;
+
+  white-space:
+    nowrap;
+}
+
+.toast {
+  position:
+    fixed;
+
+  left:
+    50%;
+
+  bottom:
+    1.4rem;
+
+  transform:
+    translateX(-50%);
+
+  z-index:
+    300;
+
+  background:
+    #18181b;
+
+  border:
+    1px solid
+    #52525b;
+
+  color:
+    #fff;
+
+  padding:
+    0.75rem
+    1rem;
+
+  border-radius:
+    999px;
+
+  box-shadow:
+    0 15px 40px
+    rgba(
+      0,
+      0,
+      0,
+      0.45
+    );
+
+  font-size:
+    0.8rem;
+
+  font-weight:
+    700;
+}
+
+/* ================================================================
+   AURORA
+   ================================================================ */
+
+.aurora-sphere {
+  position:
+    fixed;
+
+  bottom:
+    24px;
+
+  right:
+    20px;
+
+  width:
+    58px;
+
+  height:
+    58px;
+
+  border-radius:
+    50%;
+
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      #c084fc,
+      #3b82f6,
+      #000
+    );
+
+  box-shadow:
+    0 0 20px
+    rgba(
+      192,
+      132,
+      252,
+      0.6
+    ),
+    inset
+    0 0 10px
+    rgba(
+      255,
+      255,
+      255,
+      0.5
+    );
+
+  animation:
+    pulse
+    3s
+    infinite
+    alternate,
+
+    spin
+    10s
+    linear
+    infinite;
+
+  cursor:
+    pointer;
+
+  z-index:
+    100;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  font-size:
+    22px;
+
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+.aurora-window {
+  position:
+    fixed;
+
+  right:
+    20px;
+
+  bottom:
+    94px;
+
+  width:
+    min(
+      420px,
+      calc(
+        100vw - 28px
+      )
+    );
+
+  height:
+    min(
+      620px,
+      78vh
+    );
+
+  z-index:
+    150;
+
+  background:
+    #09090b;
+
+  border:
+    1px solid
+    #7c3aed;
+
+  border-radius:
+    1.4rem;
+
+  overflow:
+    hidden;
+
+  box-shadow:
+    0 30px 100px
+    rgba(
+      0,
+      0,
+      0,
+      0.65
+    );
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+}
+
+.aurora-header {
+  padding:
+    1rem;
+
+  background:
+    linear-gradient(
+      135deg,
+      #3b0764,
+      #172554
+    );
+
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    center;
+}
+
+.aurora-header b {
+  display:
+    block;
+}
+
+.aurora-header span {
+  display:
+    block;
+
+  font-size:
+    10px;
+
+  color:
+    #ddd6fe;
+
+  margin-top:
+    3px;
+}
+
+.aurora-header button {
+  font-size:
+    22px;
+
+  color:
+    #fff;
+
+  background:
+    transparent;
+
+  border:
+    0;
+}
+
+.aurora-messages {
+  flex:
+    1;
+
+  overflow:
+    auto;
+
+  padding:
+    1rem;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    0.65rem;
+}
+
+.aurora-message {
+  max-width:
+    88%;
+
+  padding:
+    0.7rem
+    0.8rem;
+
+  border-radius:
+    1rem;
+
+  font-size:
+    0.8rem;
+
+  line-height:
+    1.45;
+
+  white-space:
+    pre-wrap;
+}
+
+.aurora-message.user {
+  align-self:
+    flex-end;
+
+  background:
+    #7c3aed;
+
+  color:
+    #fff;
+
+  border-bottom-right-radius:
+    0.2rem;
+}
+
+.aurora-message.aurora {
+  align-self:
+    flex-start;
+
+  background:
+    #18181b;
+
+  border:
+    1px solid
+    #27272a;
+
+  color:
+    #e4e4e7;
+
+  border-bottom-left-radius:
+    0.2rem;
+}
+
+.aurora-attachment {
+  padding:
+    0.5rem
+    0.8rem;
+
+  border-top:
+    1px solid
+    #27272a;
+
+  font-size:
+    0.7rem;
+
+  color:
+    #c4b5fd;
+}
+
+.aurora-composer {
+  display:
+    flex;
+
+  gap:
+    0.35rem;
+
+  padding:
+    0.7rem;
+
+  border-top:
+    1px solid
+    #27272a;
+
+  background:
+    #09090b;
+}
+
+.aurora-composer button {
+  width:
+    34px;
+
+  height:
+    34px;
+
+  border:
+    0;
+
+  border-radius:
+    0.65rem;
+
+  background:
+    #18181b;
+
+  color:
+    #fff;
+}
+
+.aurora-composer
+input {
+  flex:
+    1;
+
+  min-width:
+    0;
+
+  background:
+    #18181b;
+
+  border:
+    1px solid
+    #27272a;
+
+  border-radius:
+    0.65rem;
+
+  color:
+    #fff;
+
+  padding:
+    0 0.7rem;
+
+  outline:
+    none;
+}
+
+.aurora-composer
+input:focus {
+  border-color:
+    #8b5cf6;
+}
+
 @keyframes pulse {
-  0% { transform: scale(1); box-shadow: 0 0 20px rgba(192, 132, 252, 0.6); }
-  100% { transform: scale(1.08); box-shadow: 0 0 35px rgba(192, 132, 252, 0.9); }
+
+  0% {
+    transform:
+      scale(1);
+
+    box-shadow:
+      0 0 20px
+      rgba(
+        192,
+        132,
+        252,
+        0.6
+      );
+  }
+
+  100% {
+    transform:
+      scale(1.08);
+
+    box-shadow:
+      0 0 35px
+      rgba(
+        192,
+        132,
+        252,
+        0.9
+      );
+  }
+
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+
+  100% {
+    transform:
+      rotate(360deg);
+  }
+
 }
 
-/* Ajustes responsivos para pantallas pequeñas */
-@media (max-width: 640px) {
+@media (
+  max-width: 640px
+) {
+
   .aurora-sphere {
-    width: 50px;
-    height: 50px;
-    bottom: 20px;
-    right: 16px;
-    font-size: 20px;
+
+    width:
+      52px;
+
+    height:
+      52px;
+
+    bottom:
+      18px;
+
+    right:
+      15px;
+
+    font-size:
+      20px;
   }
+
+  .aurora-window {
+
+    right:
+      10px;
+
+    bottom:
+      80px;
+
+    width:
+      calc(
+        100vw - 20px
+      );
+
+    height:
+      72vh;
+  }
+
+  .calendar-day {
+
+    min-height:
+      90px;
+
+    padding:
+      0.4rem;
+  }
+
 }
