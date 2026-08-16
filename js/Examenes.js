@@ -1,69 +1,13 @@
-const { useState } = React;
-
-window.ExamenesSection = function ExamenesSection({ items = [], onAddItem }) {
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth());
-
-  const now = new Date();
-  const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
-
-  const changeMonth = (dir) => {
-    let newMonth = month + dir;
-    let newYear = year;
-    if (newMonth > 11) { newMonth = 0; newYear++; }
-    if (newMonth < 0) { newMonth = 11; newYear--; }
-    setMonth(newMonth); setYear(newYear);
-  };
-
-  const monthName = new Date(year, month).toLocaleString('es-ES', { month: 'long' });
-
-  const currentExamenes = items.filter(item => {
-    const itemDate = new Date(item.date);
-    return item.type === 'examen' && itemDate.getFullYear() === year && itemDate.getMonth() === month;
-  });
-
-  return (
-    <div className="card-nox p-4 sm:p-6 rounded-3xl">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl sm:text-2xl font-bold">Exámenes y Eventos</h2>
-          {isCurrentMonth && (
-            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-bold flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Mes Actual
-            </span>
-          )}
-        </div>
-
-        <div className="flex gap-2 items-center">
-          <button onClick={() => changeMonth(-1)} className="p-2 bg-zinc-900 hover:bg-zinc-800 rounded-xl active:scale-95 transition">←</button>
-          <span className="font-bold capitalize text-sm sm:text-base px-2">{monthName} {year}</span>
-          <button onClick={() => changeMonth(1)} className="p-2 bg-zinc-900 hover:bg-zinc-800 rounded-xl active:scale-95 transition">→</button>
-        </div>
-      </div>
-
-      {currentExamenes.length === 0 ? (
-        <div className="p-6 sm:p-8 text-center text-zinc-500 bg-zinc-950 rounded-2xl border border-zinc-900">
-          <p className="text-sm">No hay exámenes ni eventos registrados para este mes.</p>
-          <button 
-            onClick={() => onAddItem({ type: 'examen', title: 'Nuevo Examen SENATI', date: new Date(year, month, 15).toISOString().split('T')[0] })}
-            className="mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-sm font-bold active:scale-95 transition"
-          >
-            + Añadir Nuevo Examen
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {currentExamenes.map((ex, i) => (
-            <div key={i} className="p-4 rounded-2xl bg-zinc-950 border border-red-900/40 flex justify-between items-center">
-              <div>
-                <h4 className="font-bold text-red-400">{ex.title}</h4>
-                <p className="text-xs text-zinc-400">📅 Fecha: {ex.date}</p>
-              </div>
-              <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-bold">Examen</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+const {useState}=React;
+window.ExamenesSection=function ExamenesSection({items=[],courses=[],onAddItem,onUpdateItem,onDeleteItem}){
+ const [year,setYear]=useState(new Date().getFullYear()),[month,setMonth]=useState(new Date().getMonth()),[open,setOpen]=useState(false),[editing,setEditing]=useState(null);
+ const [form,setForm]=useState({title:'',date:'',time:'08:00',endTime:'10:00',courseId:'',notes:''});
+ const name=new Date(year,month).toLocaleString('es-ES',{month:'long'}),data=items.filter(i=>i.type==='examen'&&new Date(i.date).getFullYear()===year&&new Date(i.date).getMonth()===month);
+ const move=d=>{let m=month+d,y=year;if(m>11){m=0;y++}if(m<0){m=11;y--}setMonth(m);setYear(y)};
+ const start=x=>{setEditing(x);setForm(x?{...x}:{title:'',date:new Date(year,month,15).toISOString().slice(0,10),time:'08:00',endTime:'10:00',courseId:'',notes:''});setOpen(true)};
+ const save=()=>{if(!form.title.trim()||!form.date)return alert('Completa título y fecha.');const c=courses.find(x=>x.id===form.courseId),item={...form,type:'examen',courseName:c?.name||'',color:c?.color||'#ef4444',status:editing?.status||'pendiente'};editing?onUpdateItem(editing.id,item):onAddItem(item);setOpen(false)};
+ return <div className="space-y-6"><div className="card-nox p-4 sm:p-6 rounded-3xl flex flex-col sm:flex-row justify-between gap-4"><div><h2 className="text-xl sm:text-2xl font-bold">Exámenes y Eventos</h2><p className="text-xs text-zinc-500">Crea, edita, elimina y vincula cada examen a un curso.</p></div><div className="flex gap-2 items-center"><button className="nox-btn" onClick={()=>move(-1)}>←</button><span className="font-bold capitalize px-2">{name} {year}</span><button className="nox-btn" onClick={()=>move(1)}>→</button><button className="nox-primary" onClick={()=>start()}>+ Examen</button></div></div>
+ <div className="space-y-3">{data.length===0?<div className="card-nox p-8 rounded-3xl text-center text-zinc-500">No hay exámenes este mes. <button className="text-purple-400 font-bold" onClick={()=>start()}>Crear uno</button></div>:data.map(x=><div key={x.id} className="card-nox p-4 rounded-2xl flex flex-col sm:flex-row justify-between gap-3"><div><div className="text-red-400 text-xs font-bold">{x.date} · {x.time||'--:--'}</div><b>{x.title}</b><p className="text-xs text-zinc-500">{x.courseName||'Sin curso'}{x.notes?` · ${x.notes}`:''}</p></div><div className="flex gap-2"><button className="nox-btn" onClick={()=>start(x)}>Editar</button><button className="nox-btn danger" onClick={()=>onDeleteItem(x.id)}>Eliminar</button></div></div>)}</div>
+ {open&&<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setOpen(false)}><div className="modal-card"><div className="flex justify-between mb-5"><h3 className="text-xl font-black">{editing?'Editar examen':'Nuevo examen'}</h3><button className="nox-icon" onClick={()=>setOpen(false)}>×</button></div><div className="space-y-3"><label className="field-label">Curso<select className="nox-input" value={form.courseId} onChange={e=>setForm({...form,courseId:e.target.value})}><option value="">Sin curso</option>{courses.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label className="field-label">Título<input className="nox-input" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><div className="grid grid-cols-3 gap-3"><label className="field-label">Fecha<input type="date" className="nox-input" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></label><label className="field-label">Inicio<input type="time" className="nox-input" value={form.time} onChange={e=>setForm({...form,time:e.target.value})}/></label><label className="field-label">Fin<input type="time" className="nox-input" value={form.endTime} onChange={e=>setForm({...form,endTime:e.target.value})}/></label></div><label className="field-label">Notas<textarea className="nox-input" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label><button className="w-full nox-primary" onClick={save}>{editing?'Guardar cambios':'Crear examen'}</button></div></div></div>}
+ </div>;
 };
