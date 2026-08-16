@@ -15,6 +15,20 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID || '';
 
+// Google OAuth 2.0: usa exactamente los nombres configurados en Render.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN || '';
+const GOOGLE_REDIRECT_URI =
+  process.env.GOOGLE_REDIRECT_URI ||
+  (process.env.RENDER_EXTERNAL_URL
+    ? `${process.env.RENDER_EXTERNAL_URL}/api/google/callback`
+    : `http://localhost:${PORT}/api/google/callback`);
+
+const GOOGLE_DRIVE_SCOPES = [
+  'https://www.googleapis.com/auth/drive'
+];
+
 app.use(cors());
 
 app.use(express.json({
@@ -518,50 +532,81 @@ function applyAction(state = {}, action = {}) {
    GOOGLE DRIVE
    ================================================================ */
 
+function googleOAuthClient() {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    return null;
+  }
+
+  return new google.auth.OAuth2(
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI
+  );
+}
+
 function googleAuth() {
+  // Compatibilidad opcional con una cuenta de servicio, si algún día se agrega.
+  const serviceAccountRaw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
-  const raw =
-    process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (serviceAccountRaw) {
+    try {
+      const credentials = safeJson(serviceAccountRaw);
 
-  if (!raw) {
-    return null;
-  }
-
-  try {
-
-    const credentials =
-      safeJson(raw);
-
-    if (
-      !credentials?.client_email ||
-      !credentials?.private_key
-    ) {
-      return null;
+      if (
+        credentials?.client_email &&
+        credentials?.private_key
+      ) {
+        return new google.auth.GoogleAuth({
+          credentials,
+          scopes: GOOGLE_DRIVE_SCOPES
+        });
+      }
+    } catch (error) {
+      console.error(
+        'Credenciales de cuenta de servicio inválidas:',
+        error.message
+      );
     }
+  }
 
-    return new google.auth.GoogleAuth({
-      credentials,
+  const oauth2Client = googleOAuthClient();
 
-      scopes: [
-        'https://www.googleapis.com/auth/drive'
-      ]
-    });
-
-  } catch (error) {
-
-    console.error(
-      'Credenciales Google inválidas:',
-      error.message
-    );
-
+  if (!oauth2Client || !GOOGLE_REFRESH_TOKEN) {
     return null;
   }
+
+  oauth2Client.setCredentials({
+    refresh_token: GOOGLE_REFRESH_TOKEN
+  });
+
+  return oauth2Client;
+}
+
+function getGoogleOAuth2Client() {
+  const client = googleOAuthClient();
+
+  if (!client) {
+    throw new Error(
+      'Faltan GOOGLE_CLIENT_ID y/o GOOGLE_CLIENT_SECRET en Render.'
+    );
+  }
+
+  return client;
+}
+
+function getGoogleAuthorizationUrl() {
+  const oauth2Client = getGoogleOAuth2Client();
+
+  return oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: GOOGLE_DRIVE_SCOPES,
+    include_granted_scopes: true
+  });
 }
 
 function driveClient() {
-
-  const auth =
-    googleAuth();
+  const auth = googleAuth();
 
   return auth
     ? google.drive({
@@ -1488,6 +1533,128 @@ ${AURORA_JSON_INSTRUCTIONS}
 }
 
 /* ================================================================
+   GOOGLE OAUTH 2.0
+   ================================================================ */
+
+app.get('/api/google/status', (req, res) => {
+  res.json({
+    configured: Boolean(
+      GOOGLE_CLIENT_ID &&
+      GOOGLE_CLIENT_SECRET
+    ),
+    authorized: Boolean(
+      GOOGLE_CLIENT_ID &&
+      GOOGLE_CLIENT_SECRET &&
+      GOOGLE_REFRESH_TOKEN
+    ),
+    redirectUri: GOOGLE_REDIRECT_URI,
+    driveReady: Boolean(googleAuth())
+  });
+});
+
+app.get('/api/google/auth', (req, res) => {
+  try {
+    const url = getGoogleAuthorizationUrl();
+
+    res.redirect(url);
+  } catch (error) {
+    res.status(500).send(`
+      <!doctype html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <title>NOX - Configuración de Google Drive</title>
+        <style>
+          body{font-family:Arial,sans-serif;background:#09090b;color:#fff;padding:40px;line-height:1.6}
+          .box{max-width:760px;margin:auto;background:#18181b;border:1px solid #3f3f46;border-radius:18px;padding:28px}
+          code{background:#09090b;padding:3px 6px;border-radius:6px}
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <h1>NOX · Google Drive</h1>
+          <p>${String(error.message).replace(/</g, '&lt;')}</p>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+});
+
+app.get('/api/google/callback', async (req, res) => {
+  try {
+    const code = req.query.code;
+
+    if (!code) {
+      throw new Error(
+        'Google no devolvió el código de autorización.'
+      );
+    }
+
+    const oauth2Client = getGoogleOAuth2Client();
+
+    const { tokens } =
+      await oauth2Client.getToken(code);
+
+    const refreshToken =
+      tokens.refresh_token || '';
+
+    if (!refreshToken) {
+      throw new Error(
+        'Google no devolvió un refresh token. Vuelve a autorizar con prompt=consent o revoca el acceso anterior y repite el proceso.'
+      );
+    }
+
+    res.send(`
+      <!doctype html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>NOX · Google Drive conectado</title>
+        <style>
+          body{font-family:Arial,sans-serif;background:#09090b;color:#fff;padding:24px;line-height:1.6}
+          .box{max-width:900px;margin:0 auto;background:#18181b;border:1px solid #3f3f46;border-radius:18px;padding:28px}
+          .token{word-break:break-all;background:#09090b;border:1px solid #27272a;padding:16px;border-radius:12px}
+          .warn{color:#fbbf24}
+          button{background:#7c3aed;color:#fff;border:0;border-radius:10px;padding:12px 16px;cursor:pointer;font-weight:700}
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <h1>✅ Google Drive autorizado</h1>
+          <p>La autorización funcionó. Ahora copia este <strong>refresh token</strong> y créalo en Render como variable:</p>
+          <p><code>GOOGLE_REFRESH_TOKEN</code></p>
+          <div class="token" id="token"></div>
+          <br>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('token').textContent)">Copiar token</button>
+          <p class="warn">No publiques este token ni lo subas a GitHub.</p>
+          <p>Después de guardarlo en Render, haz un nuevo deploy. El servidor podrá guardar y cargar cursos, clases, exámenes, parciales, entregables y PDFs de Google Drive.</p>
+        </div>
+        <script>
+          document.getElementById('token').textContent = ${JSON.stringify(refreshToken)};
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error('Google OAuth callback:', error);
+
+    res.status(500).send(`
+      <!doctype html>
+      <html lang="es">
+      <head><meta charset="utf-8"><title>NOX - Error Google</title></head>
+      <body style="font-family:Arial;background:#09090b;color:#fff;padding:40px">
+        <h1>❌ Error conectando Google Drive</h1>
+        <p>${String(error.message).replace(/</g, '&lt;')}</p>
+        <p>Revisa el redirect URI y vuelve a intentar desde <code>/api/google/auth</code>.</p>
+      </body>
+      </html>
+    `);
+  }
+});
+
+/* ================================================================
    HEALTH
    ================================================================ */
 
@@ -1507,6 +1674,19 @@ app.get(
       drive:
         Boolean(
           googleAuth()
+        ),
+
+      googleOAuth:
+        Boolean(
+          GOOGLE_CLIENT_ID &&
+          GOOGLE_CLIENT_SECRET
+        ),
+
+      googleAuthorized:
+        Boolean(
+          GOOGLE_CLIENT_ID &&
+          GOOGLE_CLIENT_SECRET &&
+          GOOGLE_REFRESH_TOKEN
         ),
 
       model:
