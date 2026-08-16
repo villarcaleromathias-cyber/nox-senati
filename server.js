@@ -1960,10 +1960,17 @@ app.post(
   ) => {
 
     try {
+      
+      // Aseguramos que el backend reciba explícitamente items, courses y chatHistory
+      const payload = {
+        items: req.body.items || [],
+        courses: req.body.courses || [],
+        chatHistory: req.body.chatHistory || []
+      };
 
       const result =
         await saveDrive(
-          req.body
+          payload
         );
 
       res.json({
@@ -1977,7 +1984,7 @@ app.post(
         message:
           result.enabled
 
-            ? 'Agenda sincronizada con Google Drive.'
+            ? 'Agenda sincronizada con Google Drive (items y courses).'
 
             : 'Agenda guardada localmente; Google Drive no está configurado.'
       });
@@ -2324,6 +2331,7 @@ app.post('/api/drive/sync', (req, res) => {
 
   const {
     items,
+    courses, // Añadido para asegurar consistencia en código legacy
     chatHistory
   } = req.body;
 
@@ -2340,6 +2348,7 @@ app.get('/api/drive/sync', (req, res) => {
 
   res.json({
     items: [],
+    courses: [], // Añadido para asegurar consistencia en código legacy
     chatHistory: []
   });
 });
