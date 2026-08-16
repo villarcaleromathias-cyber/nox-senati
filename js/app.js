@@ -1,78 +1,28 @@
-const { useState, useEffect } = React;
-
-function App() {
-  const [currentSection, setCurrentSection] = useState('menu');
-  
-  // Estado global sincronizado de eventos y actividades
-  const [items, setItems] = useState([
-    { type: 'clase', title: 'Clase IA & Algoritmos', date: '2026-08-17' },
-    { type: 'examen', title: 'Examen de Algoritmos', date: '2026-08-20' },
-    { type: 'parcial', title: 'Parcial Software II', date: '2026-08-25' },
-    { type: 'entregable', title: 'Proyecto Integrador SENATI', date: '2026-08-28' }
-  ]);
-
-  const handleAddItem = (newItem) => {
-    const updated = [...items, newItem];
-    setItems(updated);
-    
-    // Auto-sincronización con Google Drive
-    fetch('/api/drive/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: updated })
-    });
-  };
-
-  const menuItems = [
-    {id:'calendario', name:'Calendario General', icon:'📅'},
-    {id:'clases', name:'Clases', icon:'📓'},
-    {id:'examenes', name:'Exámenes & Eventos', icon:'📝'},
-    {id:'parciales', name:'Parciales', icon:'🎓'},
-    {id:'entregables', name:'Entregables', icon:'🚀'},
-    {id:'cursos', name:'Cursos & Materiales', icon:'📚'}
-  ];
-
-  return (
-    <div className="min-h-screen pb-24">
-      <header className="p-4 sm:p-6 border-b border-zinc-900 flex justify-between items-center bg-black/90 backdrop-blur-md sticky top-0 z-30">
-        <h1 className="text-2xl sm:text-3xl font-black tracking-widest text-purple-400 cursor-pointer active:scale-95 transition" onClick={() => setCurrentSection('menu')}>NOX</h1>
-        <div className="text-xs sm:text-sm text-zinc-400 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">Panel SENATI</div>
-      </header>
-
-      <main className="max-w-7xl mx-auto p-4 sm:p-6">
-        {currentSection !== 'menu' && (
-          <button onClick={() => setCurrentSection('menu')} className="mb-6 text-xs sm:text-sm text-purple-400 hover:text-purple-300 flex items-center gap-1 font-semibold active:scale-95 transition">
-            ← Volver al menú
-          </button>
-        )}
-
-        {currentSection === 'menu' && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-            {menuItems.map(item => (
-              <div 
-                key={item.id} 
-                onClick={() => setCurrentSection(item.id)} 
-                className="card-nox p-6 sm:p-8 rounded-3xl cursor-pointer hover:bg-zinc-900 active:scale-95 transition flex flex-col items-center justify-center text-center group"
-              >
-                <span className="text-4xl sm:text-5xl mb-3 group-hover:scale-110 transition">{item.icon}</span>
-                <h3 className="font-bold text-sm sm:text-lg text-zinc-200 group-hover:text-purple-400 transition">{item.name}</h3>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {currentSection === 'calendario' && <CalendarioSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'clases' && <ClasesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'examenes' && <ExamenesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'parciales' && <ParcialesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'entregables' && <EntregablesSection items={items} onAddItem={handleAddItem} />}
-        {currentSection === 'cursos' && <CursosSection items={items} onAddItem={handleAddItem} />}
-      </main>
-
-      <AuroraSphere items={items} onUpdateItems={setItems} />
-    </div>
-  );
+const {useState,useEffect}=React;
+function App(){
+ const [section,setSection]=useState('menu'),[items,setItems]=useState([]),[courses,setCourses]=useState([]),[notice,setNotice]=useState(false),[sync,setSync]=useState('Cargando...'),[toast,setToast]=useState('');
+ const seed=[{id:'demo-class',type:'clase',title:'Clase IA & Algoritmos',date:'2026-08-17',time:'08:00',endTime:'10:00',status:'pendiente'},{id:'demo-exam',type:'examen',title:'Examen de Algoritmos',date:'2026-08-20',time:'09:00',endTime:'11:00',status:'pendiente'},{id:'demo-partial',type:'parcial',title:'Parcial Software II',date:'2026-08-25',time:'08:00',endTime:'10:00',status:'pendiente'},{id:'demo-work',type:'entregable',title:'Proyecto Integrador SENATI',date:'2026-08-28',time:'23:59',status:'pendiente'}];
+ useEffect(()=>{let local=null;try{local=JSON.parse(localStorage.getItem('nox-agenda-v2')||'null')}catch{};if(local){setItems(local.items||[]);setCourses(local.courses||[]);setSync('Local')}fetch('/api/drive/sync').then(r=>r.ok?r.json():null).then(d=>{if(d&&(d.items||d.courses)){setItems(d.items||[]);setCourses(d.courses||[]);setSync('Google Drive')}else if(!local){setItems(seed);setSync('Local')}}).catch(()=>{if(!local)setItems(seed);setSync('Local')})},[]);
+ useEffect(()=>{localStorage.setItem('nox-agenda-v2',JSON.stringify({items,courses}))},[items,courses]);
+ useEffect(()=>{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission().catch(()=>{})},[]);
+ const syncNow=(ni=items,nc=courses)=>{setSync('Guardando...');fetch('/api/drive/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:ni,courses:nc})}).then(r=>r.json()).then(d=>setSync(d.drive?'Google Drive':'Local')).catch(()=>setSync('Local'))};
+ const msg=t=>{setToast(t);setTimeout(()=>setToast(''),2200)};
+ const addItem=x=>{const n=[...items,{...x,id:crypto.randomUUID(),createdAt:new Date().toISOString()}];setItems(n);syncNow(n,courses);msg('Evento creado')};
+ const updateItem=(id,p)=>{const n=items.map(x=>x.id===id?{...x,...p,updatedAt:new Date().toISOString()}:x);setItems(n);syncNow(n,courses);msg('Cambios guardados')};
+ const deleteItem=id=>{if(!confirm('¿Eliminar este evento?'))return;const n=items.filter(x=>x.id!==id);setItems(n);syncNow(n,courses);msg('Evento eliminado')};
+ const addCourse=x=>{const n=[...courses,{...x,id:crypto.randomUUID(),materials:[],createdAt:new Date().toISOString()}];setCourses(n);syncNow(items,n);msg('Curso creado')};
+ const updateCourse=(id,p)=>{const n=courses.map(c=>c.id===id?{...c,...p,updatedAt:new Date().toISOString()}:c);setCourses(n);syncNow(items,n);msg('Curso actualizado')};
+ const deleteCourse=id=>{if(!confirm('¿Eliminar el curso? Sus eventos se conservarán sin vínculo.'))return;const n=courses.filter(c=>c.id!==id),ni=items.map(i=>i.courseId===id?{...i,courseId:'',courseName:''}:i);setCourses(n);setItems(ni);syncNow(ni,n);msg('Curso eliminado')};
+ const upload=async(cid,file,base64)=>{const c=courses.find(x=>x.id===cid),num=(c?.materials||[]).length+1;const r=await fetch('/api/drive/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:`PDF ${num}.pdf`,mimeType:file.type,base64,courseName:c.name})}),d=await r.json();if(!r.ok)throw new Error(d.error||'No se pudo subir el PDF.');const m={id:crypto.randomUUID(),name:`PDF ${num}`,originalName:file.name,driveId:d.file?.id||'',webViewLink:d.file?.webViewLink||'',uploadedAt:new Date().toISOString()},n=courses.map(x=>x.id===cid?{...x,materials:[...(x.materials||[]),m]}:x);setCourses(n);syncNow(items,n);msg(`${m.name} subido`)};
+ const delMat=(cid,mid)=>{const n=courses.map(c=>c.id===cid?{...c,materials:(c.materials||[]).filter(m=>m.id!==mid)}:c);setCourses(n);syncNow(items,n);msg('Material eliminado de la agenda')};
+ const apply=async(action,history)=>{const r=await fetch('/api/assistant/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:{items,courses},action,chatHistory:history})}),d=await r.json();if(!r.ok)throw new Error(d.error||'No se pudo aplicar');if(d.changed){setItems(d.items||[]);setCourses(d.courses||[]);setSync('Google Drive')}return d};
+ const menu=[['calendario','Calendario General','📅','Todo en un solo lugar'],['clases','Clases','📓','Horarios y sesiones'],['examenes','Exámenes & Eventos','📝','Fechas importantes'],['parciales','Parciales','🎓','Evaluaciones'],['entregables','Entregables','🚀','Fechas límite'],['cursos','Cursos & Materiales','📚','Cursos y PDFs']];
+ const pending=items.filter(x=>x.status!=='completado'&&x.date).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+ const days=d=>Math.ceil((new Date(d+'T23:59:59')-new Date())/86400000);
+ return <div className="min-h-screen pb-24"><header className="p-4 sm:p-6 border-b border-zinc-900 bg-black/90 backdrop-blur-md sticky top-0 z-30"><div className="max-w-7xl mx-auto flex justify-between items-center"><button onClick={()=>setSection('menu')} className="text-2xl sm:text-3xl font-black tracking-widest text-purple-400">NOX</button><div className="flex items-center gap-2"><span className="hidden sm:block text-xs text-zinc-500">{sync}</span><button className="notification-button" onClick={()=>setNotice(!notice)}>🔔{pending.length>0&&<b>{pending.length}</b>}</button><span className="text-xs text-zinc-400 bg-zinc-900 px-3 py-1 rounded-full">Panel SENATI</span></div></div>{notice&&<div className="notification-panel"><b>Próximos pendientes</b>{pending.length?pending.slice(0,8).map(x=><div className="notification-row" key={x.id}><div><b>{x.title}</b><span>{x.courseName||'Sin curso'} · {x.date}{x.time?` · ${x.time}`:''}</span></div><strong>{days(x.date)<=0?'Hoy':days(x.date)===1?'Mañana':`${days(x.date)} días`}</strong></div>):<p className="text-xs text-zinc-500 mt-3">No tienes pendientes.</p>}</div>}</header>
+ <main className="max-w-7xl mx-auto p-4 sm:p-6">{section!=='menu'&&<button className="mb-5 text-sm text-purple-400 font-bold" onClick={()=>setSection('menu')}>← Volver al menú</button>}
+ {section==='menu'&&<><h2 className="text-3xl font-black">Tu centro de estudios</h2><p className="text-zinc-500 text-sm mt-1 mb-6">Organiza cursos, clases, evaluaciones y trabajos con Aurora.</p><div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">{menu.map(x=><button key={x[0]} onClick={()=>setSection(x[0])} className="card-nox p-5 sm:p-7 rounded-3xl text-left hover:bg-zinc-900 transition"><span className="text-4xl">{x[2]}</span><h3 className="font-bold mt-4">{x[1]}</h3><p className="text-xs text-zinc-500 mt-1">{x[3]}</p></button>)}</div><div className="mt-6 card-nox rounded-3xl p-5"><b>Comandos de Aurora</b><p className="text-xs text-zinc-500 mt-2">“crear clase…”, “crear parcial…”, “editar…”, “eliminar…”, “completar…”, “¿qué tengo pendiente?” y “ayuda”.</p></div></>}
+ {section==='calendario'&&<CalendarioSection items={items}/>} {section==='clases'&&<ClasesSection items={items} courses={courses} onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}/>} {section==='examenes'&&<ExamenesSection items={items} courses={courses} onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}/>} {section==='parciales'&&<ParcialesSection items={items} courses={courses} onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}/>} {section==='entregables'&&<EntregablesSection items={items} courses={courses} onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}/>} {section==='cursos'&&<CursosSection courses={courses} onAddCourse={addCourse} onUpdateCourse={updateCourse} onDeleteCourse={deleteCourse} onUploadMaterial={upload} onDeleteMaterial={delMat}/>}</main>
+ <AuroraSphere items={items} courses={courses} onApplyAction={apply}/>{toast&&<div className="toast">{toast}</div>}</div>;
 }
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
