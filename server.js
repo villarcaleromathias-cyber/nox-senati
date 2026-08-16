@@ -873,213 +873,384 @@ async function uploadDrive({
 }
 
 /* ================================================================
-   ESQUEMA DE ACCIONES DE AURORA
+   ACCIONES FLEXIBLES DE AURORA
    ================================================================ */
 
-const SCHEMA = {
-  type: 'object',
+const AURORA_ACTIONS = [
+  'none',
+  'help',
+  'list',
+  'create',
+  'update',
+  'delete',
+  'complete',
+  'create_course',
+  'update_course',
+  'delete_course',
+  'delete_material'
+];
 
-  additionalProperties: false,
+const AURORA_TYPES = [
+  'clase',
+  'examen',
+  'parcial',
+  'entregable',
+  ''
+];
 
-  properties: {
+const AURORA_JSON_INSTRUCTIONS = `
+RESPONDE SIEMPRE con JSON válido.
 
-    action: {
-      type: 'string',
+FORMATO EXACTO:
 
-      enum: [
-        'none',
-        'help',
-        'list',
-        'create',
-        'update',
-        'delete',
-        'complete',
-        'create_course',
-        'update_course',
-        'delete_course',
-        'delete_material'
-      ]
-    },
-
-    type: {
-      type: 'string',
-
-      enum: [
-        'clase',
-        'examen',
-        'parcial',
-        'entregable',
-        ''
-      ]
-    },
-
-    title: {
-      type: 'string'
-    },
-
-    courseName: {
-      type: 'string'
-    },
-
-    courseId: {
-      type: 'string'
-    },
-
-    date: {
-      type: 'string'
-    },
-
-    time: {
-      type: 'string'
-    },
-
-    endTime: {
-      type: 'string'
-    },
-
-    notes: {
-      type: 'string'
-    },
-
-    color: {
-      type: 'string'
-    },
-
-    id: {
-      type: 'string'
-    },
-
-    materialId: {
-      type: 'string'
-    },
-
-    item: {
-      type: 'object',
-
-      additionalProperties: false,
-
-      properties: {
-
-        id: {
-          type: 'string'
-        },
-
-        type: {
-          type: 'string'
-        },
-
-        title: {
-          type: 'string'
-        },
-
-        date: {
-          type: 'string'
-        },
-
-        time: {
-          type: 'string'
-        },
-
-        endTime: {
-          type: 'string'
-        },
-
-        courseId: {
-          type: 'string'
-        },
-
-        courseName: {
-          type: 'string'
-        },
-
-        notes: {
-          type: 'string'
-        },
-
-        color: {
-          type: 'string'
-        },
-
-        status: {
-          type: 'string'
-        }
-      },
-
-      required: [
-        'id',
-        'type',
-        'title',
-        'date',
-        'time',
-        'endTime',
-        'courseId',
-        'courseName',
-        'notes',
-        'color',
-        'status'
-      ]
-    },
-
-    course: {
-      type: 'object',
-
-      additionalProperties: false,
-
-      properties: {
-
-        id: {
-          type: 'string'
-        },
-
-        name: {
-          type: 'string'
-        },
-
-        teacher: {
-          type: 'string'
-        },
-
-        room: {
-          type: 'string'
-        },
-
-        color: {
-          type: 'string'
-        },
-
-        notes: {
-          type: 'string'
-        }
-      },
-
-      required: [
-        'id',
-        'name',
-        'teacher',
-        'room',
-        'color',
-        'notes'
-      ]
+{
+  "reply": "respuesta breve para el usuario",
+  "actions": [
+    {
+      "action": "create",
+      "type": "clase",
+      "title": "",
+      "courseName": "",
+      "courseId": "",
+      "date": "",
+      "time": "",
+      "endTime": "",
+      "notes": "",
+      "color": "",
+      "id": "",
+      "materialId": "",
+      "item": {},
+      "course": {}
     }
-  },
-
-  required: [
-    'action',
-    'type',
-    'title',
-    'courseName',
-    'courseId',
-    'date',
-    'time',
-    'endTime',
-    'notes',
-    'color',
-    'id',
-    'materialId',
-    'item',
-    'course'
   ]
-};
+}
+
+REGLAS IMPORTANTES:
+
+1. "actions" SIEMPRE debe ser un array.
+2. Una sola petición puede contener MUCHAS acciones.
+3. Separa cada intención del usuario en una acción independiente.
+4. Si el usuario pide varios cursos, genera una acción "create_course" por cada curso.
+5. Si pide varios eventos, genera una acción "create" por cada evento.
+6. Si combina cursos + clases + exámenes + parciales + entregables, genera todas las acciones.
+7. No agrupes varias entidades dentro de una sola acción.
+8. No inventes IDs.
+9. Si no conoces un dato, usa una cadena vacía.
+10. Para un curso nuevo usa "create_course" y coloca sus datos en "course".
+11. Para una clase usa "create" + type "clase".
+12. Para un examen usa "create" + type "examen".
+13. Para un parcial usa "create" + type "parcial".
+14. Para un entregable usa "create" + type "entregable".
+15. Para editar un evento usa "update".
+16. Para eliminar un evento usa "delete".
+17. Para completar un evento usa "complete".
+18. Para editar un curso usa "update_course".
+19. Para eliminar un curso usa "delete_course".
+20. Para eliminar un material usa "delete_material".
+21. Para consultar pendientes usa "list".
+22. Para ayuda usa "help".
+23. Interpreta lenguaje natural, abreviaturas, errores ortográficos, comas, "y", "además", "también", "por cierto", listas separadas por comas y frases largas.
+24. Comprende fechas naturales como "hoy", "mañana", "pasado mañana", "el lunes", "este viernes", "la próxima semana", siempre que puedan resolverse con seguridad usando la fecha actual que aparece en el contexto.
+25. Comprende horas como "a las ocho", "8am", "8:00", "de 8 a 10", "en la tarde", etc.
+26. Comprende expresiones de acción como "agrégame", "añade", "pon", "crea", "registra", "anota", "apunta", "programa".
+27. Comprende "borra", "quita", "elimina", "saca".
+28. Comprende "cambia", "edita", "modifica", "corrige", "actualiza".
+29. Comprende "terminé", "he terminado", "marca como hecho", "completado".
+30. Si el usuario da una lista, interpreta cada elemento como una entidad separada cuando el contexto lo indique.
+31. Si el usuario mezcla varias acciones en una oración, conserva el orden lógico de las acciones.
+32. No inventes datos faltantes; deja el campo vacío y deja que el backend conserve el dato anterior cuando corresponda.
+33. "reply" debe ser breve y en español.
+34. Nunca devuelvas Markdown dentro de "reply".
+`;
+
+function sanitizeAuroraAction(action = {}) {
+
+  const raw =
+    action &&
+    typeof action === 'object'
+      ? action
+      : {};
+
+  const normalizedAction =
+    String(
+      raw.action || 'none'
+    )
+      .trim()
+      .toLowerCase();
+
+  const normalizedType =
+    String(
+      raw.type || ''
+    )
+      .trim()
+      .toLowerCase();
+
+  return {
+
+    action:
+      AURORA_ACTIONS.includes(
+        normalizedAction
+      )
+        ? normalizedAction
+        : 'none',
+
+    type:
+      AURORA_TYPES.includes(
+        normalizedType
+      )
+        ? normalizedType
+        : '',
+
+    title:
+      raw.title == null
+        ? ''
+        : String(
+            raw.title
+          ).trim(),
+
+    courseName:
+      raw.courseName == null
+        ? ''
+        : String(
+            raw.courseName
+          ).trim(),
+
+    courseId:
+      raw.courseId == null
+        ? ''
+        : String(
+            raw.courseId
+          ).trim(),
+
+    date:
+      raw.date == null
+        ? ''
+        : String(
+            raw.date
+          ).trim(),
+
+    time:
+      raw.time == null
+        ? ''
+        : String(
+            raw.time
+          ).trim(),
+
+    endTime:
+      raw.endTime == null
+        ? ''
+        : String(
+            raw.endTime
+          ).trim(),
+
+    notes:
+      raw.notes == null
+        ? ''
+        : String(
+            raw.notes
+          ),
+
+    color:
+      raw.color == null
+        ? ''
+        : String(
+            raw.color
+          ).trim(),
+
+    id:
+      raw.id == null
+        ? ''
+        : String(
+            raw.id
+          ).trim(),
+
+    materialId:
+      raw.materialId == null
+        ? ''
+        : String(
+            raw.materialId
+          ).trim(),
+
+    item:
+      raw.item &&
+      typeof raw.item === 'object' &&
+      !Array.isArray(raw.item)
+        ? raw.item
+        : {},
+
+    course:
+      raw.course &&
+      typeof raw.course === 'object' &&
+      !Array.isArray(raw.course)
+        ? raw.course
+        : {}
+  };
+}
+
+function extractAuroraActions(
+  parsed = {}
+) {
+
+  if (
+    parsed &&
+    Array.isArray(
+      parsed.actions
+    )
+  ) {
+
+    return parsed.actions
+      .map(
+        sanitizeAuroraAction
+      )
+      .filter(
+        action =>
+          action.action !==
+            'none' ||
+          action.title
+      );
+  }
+
+  if (
+    parsed &&
+    parsed.action
+  ) {
+
+    return [
+      sanitizeAuroraAction(
+        parsed
+      )
+    ];
+  }
+
+  return [];
+}
+
+async function applyActions(
+  state = {},
+  actions = [],
+  save = true
+) {
+
+  let currentState = {
+
+    items:
+      Array.isArray(
+        state.items
+      )
+        ? state.items
+        : [],
+
+    courses:
+      Array.isArray(
+        state.courses
+      )
+        ? state.courses
+        : []
+  };
+
+  const applied = [];
+  const errors = [];
+
+  for (
+    const rawAction
+    of actions
+  ) {
+
+    const action =
+      sanitizeAuroraAction(
+        rawAction
+      );
+
+    if (
+      !action.action ||
+      action.action === 'none' ||
+      action.action === 'help' ||
+      action.action === 'list'
+    ) {
+      continue;
+    }
+
+    const result =
+      applyAction(
+        currentState,
+        action
+      );
+
+    if (
+      result.error
+    ) {
+
+      errors.push({
+        action,
+        error:
+          result.error
+      });
+
+      continue;
+    }
+
+    if (
+      result.changed
+    ) {
+
+      currentState = {
+
+        items:
+          result.items,
+
+        courses:
+          result.courses
+      };
+
+      applied.push({
+
+        action,
+
+        result:
+          result.result
+      });
+    }
+  }
+
+  if (
+    save &&
+    applied.length > 0
+  ) {
+
+    try {
+
+      await saveDrive({
+
+        items:
+          currentState.items,
+
+        courses:
+          currentState.courses
+      });
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        'Drive después de acciones Aurora:',
+        error.message
+      );
+    }
+  }
+
+  return {
+
+    ...currentState,
+
+    applied,
+
+    errors,
+
+    changed:
+      applied.length > 0
+  };
+}
 
 async function askAurora(
   message,
@@ -1087,113 +1258,127 @@ async function askAurora(
   history = []
 ) {
 
-  if (!GROQ_API_KEY) {
+  if (
+    !GROQ_API_KEY
+  ) {
 
     return {
+
       reply:
         'Aurora está en modo local. Configura GROQ_API_KEY para comprensión avanzada.',
 
-      action: {
-        action: 'none'
-      }
+      actions: []
     };
   }
 
+  const currentDate =
+    new Date().toISOString();
+
   const system = `
-Eres Aurora, asistente de NOX Agenda SENATI.
+Eres Aurora, la inteligencia artificial de NOX Agenda SENATI.
 
-Entiende español natural y convierte peticiones en acciones.
+Tu trabajo es entender lenguaje natural y convertir las intenciones del usuario en acciones ejecutables.
 
-Puedes:
-- crear clases
-- editar clases
-- eliminar clases
-- crear exámenes
-- editar exámenes
-- eliminar exámenes
-- crear parciales
-- editar parciales
-- eliminar parciales
-- crear entregables
-- editar entregables
-- eliminar entregables
-- completar actividades
-- crear cursos
-- editar cursos
-- eliminar cursos
-- consultar pendientes
+No eres un simple chatbot.
+Puedes manipular la agenda.
 
-Vincula eventos con cursos cuando sea posible.
+Puedes administrar:
 
-Fechas:
-YYYY-MM-DD
+- cursos
+- clases
+- exámenes
+- parciales
+- entregables
+- materiales
+- horarios
+- fechas
+- relaciones entre cursos y eventos
+- estados de tareas
 
-Horas:
-HH:MM
+Una petición puede contener una sola orden o MUCHAS órdenes.
 
-No inventes IDs.
+Ejemplos:
 
-Si falta una fecha inequívoca,
-déjala vacía.
+"crea matemática, física e inglés"
+=> 3 acciones create_course.
 
-Si piden ayuda:
-usa help.
+"crea matemática, borra física y mueve inglés al viernes"
+=> 3 acciones.
 
-Si piden consultar:
-usa list.
+"añade una clase de software mañana a las 8 y un examen de matemática el viernes a las 10"
+=> 2 acciones.
 
-No hagas cambios ambiguos.
+"crea el curso de programación, una clase el lunes a las 8, un parcial el jueves y un entregable para el viernes"
+=> 4 acciones.
+
+Interpreta español natural aunque el usuario:
+- escriba rápido,
+- tenga errores ortográficos,
+- use abreviaturas,
+- cambie el orden de las palabras,
+- use expresiones informales,
+- combine varias órdenes con "y", "también", "además",
+- utilice comas o listas.
+
+No inventes información.
+
+Fecha actual del servidor:
+${currentDate}
+
+Estado actual de NOX:
+${JSON.stringify(
+  state,
+  null,
+  2
+)}
+
+${AURORA_JSON_INSTRUCTIONS}
 `;
+
+  const messages = [
+
+    {
+      role: 'system',
+      content:
+        system
+    },
+
+    ...(history || [])
+      .slice(-10)
+      .map(
+        historyItem => ({
+          role:
+            historyItem.sender ===
+            'user'
+              ? 'user'
+              : 'assistant',
+
+          content:
+            historyItem.text
+        })
+      ),
+
+    {
+      role: 'user',
+      content:
+        message
+    }
+  ];
 
   const body = {
 
     model:
       GROQ_MODEL,
 
-    messages: [
+    messages,
 
-      {
-        role: 'system',
-        content: system
-      },
-
-      {
-        role: 'system',
-
-        content:
-          `Estado actual:\n${JSON.stringify(
-            state
-          )}`
-      },
-
-      ...(history || [])
-        .slice(-8)
-        .map(historyItem => ({
-          role:
-            historyItem.sender === 'user'
-              ? 'user'
-              : 'assistant',
-
-          content:
-            historyItem.text
-        })),
-
-      {
-        role: 'user',
-        content: message
-      }
-    ],
-
-    temperature: 0.1,
+    temperature:
+      0.2,
 
     response_format: {
-      type: 'json_schema',
 
-      json_schema: {
-        name: 'nox_action',
-        strict: true,
-        schema: SCHEMA
-      }
+      type:
+        'json_object'
     }
   };
 
@@ -1201,9 +1386,12 @@ No hagas cambios ambiguos.
     await fetch(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        method: 'POST',
+
+        method:
+          'POST',
 
         headers: {
+
           Authorization:
             `Bearer ${GROQ_API_KEY}`,
 
@@ -1212,14 +1400,18 @@ No hagas cambios ambiguos.
         },
 
         body:
-          JSON.stringify(body)
+          JSON.stringify(
+            body
+          )
       }
     );
 
   const data =
     await response.json();
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
 
     throw new Error(
       data.error?.message ||
@@ -1227,19 +1419,71 @@ No hagas cambios ambiguos.
     );
   }
 
-  const action =
-    safeJson(
-      data.choices?.[0]?.message?.content ||
-        '{}',
+  let generated =
+    data.choices?.[0]
+      ?.message
+      ?.content ||
+    '{}';
 
-      {
-        action: 'none'
-      }
+  let parsed;
+
+  try {
+
+    parsed =
+      JSON.parse(
+        generated
+      );
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'JSON inválido generado por Aurora:',
+      generated
     );
 
+    throw new Error(
+      'Aurora generó una respuesta que no tiene formato JSON válido.'
+    );
+  }
+
+  let actions =
+    extractAuroraActions(
+      parsed
+    );
+
+  if (
+    !Array.isArray(
+      actions
+    )
+  ) {
+
+    actions = [];
+  }
+
   return {
-    reply: 'Entendido.',
-    action
+
+    reply:
+      typeof parsed.reply ===
+        'string'
+        ? parsed.reply
+        : 'Entendido.',
+
+    actions,
+
+    /*
+     * Compatibilidad con el
+     * Aurora.js antiguo.
+     */
+
+    action:
+      actions.length > 0
+        ? actions[0]
+        : {
+            action:
+              'none'
+          }
   };
 }
 
@@ -1252,6 +1496,7 @@ app.get(
   (req, res) => {
 
     res.json({
+
       ok: true,
 
       aurora:
@@ -1276,7 +1521,10 @@ app.get(
 
 app.post(
   '/api/chat',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
 
     try {
 
@@ -1294,21 +1542,31 @@ app.post(
         !fileData
       ) {
 
-        return res.status(400).json({
-          error:
-            'No recibí ningún mensaje o archivo.'
-        });
+        return res
+          .status(400)
+          .json({
+
+            error:
+              'No recibí ningún mensaje o archivo.'
+          });
       }
 
-      if (message) {
+      if (
+        message
+      ) {
 
         const result =
           await askAurora(
+
             message,
+
             state || {
+
               items: [],
+
               courses: []
             },
+
             history
           );
 
@@ -1318,89 +1576,194 @@ app.post(
       }
 
       res.json({
+
         reply:
           'Recibí el archivo. Puedes pedirme que lo use en tu agenda cuando esté disponible como texto.',
 
+        actions: [],
+
         action: {
-          action: 'none'
+          action:
+            'none'
         }
       });
 
-    } catch (error) {
+    } catch (
+      error
+    ) {
 
       console.error(
         'Aurora:',
         error
       );
 
-      res.status(500).json({
-        error:
-          error.message ||
-          'Error interno de Aurora.'
-      });
+      res
+        .status(500)
+        .json({
+
+          error:
+            error.message ||
+            'Error interno de Aurora.'
+        });
     }
   }
 );
 
 /* ================================================================
-   APLICAR ACCIÓN DE AURORA
+   APLICAR UNA O VARIAS ACCIONES DE AURORA
    ================================================================ */
 
 app.post(
   '/api/assistant/apply',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
 
     try {
 
+      const state =
+        req.body.state || {
+
+          items: [],
+
+          courses: []
+        };
+
+      let actions = [];
+
+      if (
+        Array.isArray(
+          req.body.actions
+        )
+      ) {
+
+        actions =
+          req.body.actions;
+
+      } else if (
+        req.body.action
+      ) {
+
+        actions = [
+          req.body.action
+        ];
+      }
+
+      if (
+        actions.length ===
+        0
+      ) {
+
+        return res.json({
+
+          items:
+            state.items || [],
+
+          courses:
+            state.courses || [],
+
+          applied: [],
+
+          errors: [],
+
+          changed:
+            false,
+
+          message:
+            'No había acciones que ejecutar.'
+        });
+      }
+
       const result =
-        applyAction(
-          req.body.state || {},
-          req.body.action || {}
+        await applyActions(
+
+          state,
+
+          actions,
+
+          true
         );
 
-      if (result.changed) {
+      let message;
 
-        try {
+      if (
+        result.applied.length ===
+          0 &&
+        result.errors.length >
+          0
+      ) {
 
-          await saveDrive({
-            items:
-              result.items,
+        message =
+          result.errors
+            .map(
+              error =>
+                error.error
+            )
+            .join(
+              ' · '
+            );
 
-            courses:
-              result.courses,
+      } else if (
+        result.applied.length ===
+        1
+      ) {
 
-            chatHistory:
-              req.body.chatHistory || []
-          });
+        message =
+          'Cambio aplicado correctamente.';
 
-        } catch (error) {
+      } else {
 
-          console.error(
-            'Drive:',
-            error.message
-          );
-        }
+        message =
+          `${result.applied.length} cambios aplicados correctamente.`;
+      }
+
+      if (
+        result.errors.length >
+        0
+      ) {
+
+        message +=
+          ` ${result.errors.length} acción(es) no pudieron aplicarse.`;
       }
 
       res.json({
-        ...result,
 
-        message:
-          result.error ||
-          (
-            result.changed
-              ? 'Cambio aplicado correctamente.'
-              : 'No hubo cambios.'
-          )
+        items:
+          result.items,
+
+        courses:
+          result.courses,
+
+        applied:
+          result.applied,
+
+        errors:
+          result.errors,
+
+        changed:
+          result.changed,
+
+        message
       });
 
-    } catch (error) {
+    } catch (
+      error
+    ) {
 
-      res.status(500).json({
-        error:
-          error.message ||
-          'No se pudo aplicar la acción.'
-      });
+      console.error(
+        'Error aplicando acciones Aurora:',
+        error
+      );
+
+      res
+        .status(500)
+        .json({
+
+          error:
+            error.message ||
+            'No se pudieron aplicar las acciones.'
+        });
     }
   }
 );
@@ -1411,7 +1774,10 @@ app.post(
 
 app.post(
   '/api/drive/sync',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
 
     try {
 
@@ -1421,6 +1787,7 @@ app.post(
         );
 
       res.json({
+
         status:
           'success',
 
@@ -1429,23 +1796,33 @@ app.post(
 
         message:
           result.enabled
+
             ? 'Agenda sincronizada con Google Drive.'
+
             : 'Agenda guardada localmente; Google Drive no está configurado.'
       });
 
-    } catch (error) {
+    } catch (
+      error
+    ) {
 
-      res.status(500).json({
-        error:
-          'No se pudo sincronizar con Google Drive.'
-      });
+      res
+        .status(500)
+        .json({
+
+          error:
+            'No se pudo sincronizar con Google Drive.'
+        });
     }
   }
 );
 
 app.get(
   '/api/drive/sync',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
 
     try {
 
@@ -1453,20 +1830,31 @@ app.get(
         await loadDrive();
 
       res.json(
+
         result.data ||
+
         {
+
           items: [],
+
           courses: [],
+
           chatHistory: []
         }
+
       );
 
-    } catch (error) {
+    } catch (
+      error
+    ) {
 
-      res.status(500).json({
-        error:
-          'No se pudo cargar la agenda desde Google Drive.'
-      });
+      res
+        .status(500)
+        .json({
+
+          error:
+            'No se pudo cargar la agenda desde Google Drive.'
+        });
     }
   }
 );
@@ -1477,7 +1865,10 @@ app.get(
 
 app.post(
   '/api/drive/upload',
-  async (req, res) => {
+  async (
+    req,
+    res
+  ) => {
 
     try {
 
@@ -1493,43 +1884,59 @@ app.post(
         !base64
       ) {
 
-        return res.status(400).json({
-          error:
-            'Faltan datos del archivo.'
-        });
+        return res
+          .status(400)
+          .json({
+
+            error:
+              'Faltan datos del archivo.'
+          });
       }
 
       const result =
         await uploadDrive({
+
           name,
+
           mimeType,
+
           base64,
+
           courseName
         });
 
-      if (!result.enabled) {
+      if (
+        !result.enabled
+      ) {
 
-        return res.status(503).json(
-          result
-        );
+        return res
+          .status(503)
+          .json(
+            result
+          );
       }
 
       res.json(
         result
       );
 
-    } catch (error) {
+    } catch (
+      error
+    ) {
 
       console.error(
         'Upload Drive:',
         error
       );
 
-      res.status(500).json({
-        error:
-          error.message ||
-          'No se pudo subir el archivo.'
-      });
+      res
+        .status(500)
+        .json({
+
+          error:
+            error.message ||
+            'No se pudo subir el archivo.'
+        });
     }
   }
 );
@@ -1540,7 +1947,10 @@ app.post(
 
 app.get(
   '*',
-  (req, res) => {
+  (
+    req,
+    res
+  ) => {
 
     res.sendFile(
       path.join(
@@ -1554,6 +1964,7 @@ app.get(
 app.listen(
   PORT,
   () => {
+
     console.log(
       `Servidor Nox iniciado en puerto ${PORT}`
     );
