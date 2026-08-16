@@ -1,55 +1,13 @@
-const { useState } = React;
-
-window.EntregablesSection = function EntregablesSection({ items = [], onAddItem }) {
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth());
-
-  const now = new Date();
-  const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
-
-  const changeMonth = (dir) => {
-    let newMonth = month + dir;
-    let newYear = year;
-    if (newMonth > 11) { newMonth = 0; newYear++; }
-    if (newMonth < 0) { newMonth = 11; newYear--; }
-    setMonth(newMonth); setYear(newYear);
-  };
-
-  const monthName = new Date(year, month).toLocaleString('es-ES', { month: 'long' });
-
-  const currentEntregables = items.filter(item => item.type === 'entregable');
-
-  return (
-    <div className="card-nox p-4 sm:p-6 rounded-3xl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl sm:text-2xl font-bold">Entregables SENATI ({monthName} {year})</h2>
-          {isCurrentMonth && (
-            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-bold flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Mes Actual
-            </span>
-          )}
-        </div>
-
-        <button 
-          onClick={() => onAddItem({ type: 'entregable', title: 'Nuevo Trabajo Entregable', date: new Date(year, month, 20).toISOString().split('T')[0] })}
-          className="w-full sm:w-auto px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-xl font-bold text-sm active:scale-95 transition"
-        >
-          + Nuevo Trabajo
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {currentEntregables.map((item, idx) => (
-          <div key={idx} className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <h4 className="font-bold text-base sm:text-lg">{item.title}</h4>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1">⏳ Plazo máximo: {item.date}</p>
-            </div>
-            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full text-xs font-bold">En Progreso</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+const {useState}=React;
+window.EntregablesSection=function EntregablesSection({items=[],courses=[],onAddItem,onUpdateItem,onDeleteItem}){
+ const [year,setYear]=useState(new Date().getFullYear()),[month,setMonth]=useState(new Date().getMonth()),[open,setOpen]=useState(false),[editing,setEditing]=useState(null);
+ const [form,setForm]=useState({title:'',date:'',time:'23:59',courseId:'',notes:''});
+ const name=new Date(year,month).toLocaleString('es-ES',{month:'long'}),data=items.filter(i=>i.type==='entregable'&&new Date(i.date).getFullYear()===year&&new Date(i.date).getMonth()===month);
+ const move=d=>{let m=month+d,y=year;if(m>11){m=0;y++}if(m<0){m=11;y--}setMonth(m);setYear(y)};
+ const start=x=>{setEditing(x);setForm(x?{...x}:{title:'',date:new Date(year,month,20).toISOString().slice(0,10),time:'23:59',courseId:'',notes:''});setOpen(true)};
+ const save=()=>{if(!form.title.trim()||!form.date)return alert('Completa el trabajo y la fecha.');const c=courses.find(x=>x.id===form.courseId),item={...form,type:'entregable',courseName:c?.name||'',color:c?.color||'#eab308',status:editing?.status||'pendiente'};editing?onUpdateItem(editing.id,item):onAddItem(item);setOpen(false)};
+ return <div className="space-y-6"><div className="card-nox p-4 sm:p-6 rounded-3xl flex flex-col sm:flex-row justify-between gap-4"><div><h2 className="text-xl sm:text-2xl font-bold capitalize">Entregables · {name} {year}</h2><p className="text-xs text-zinc-500">Trabajos pendientes y fechas límite.</p></div><div className="flex gap-2"><button className="nox-btn" onClick={()=>move(-1)}>←</button><button className="nox-btn" onClick={()=>move(1)}>→</button><button className="nox-primary" onClick={()=>start()}>+ Nuevo trabajo</button></div></div>
+ <div className="space-y-3">{data.map(x=><div key={x.id} className="card-nox p-4 rounded-2xl flex justify-between gap-3"><div><div className="text-yellow-400 text-xs font-bold">Entrega: {x.date} · {x.time}</div><b>{x.title}</b><p className="text-xs text-zinc-500">{x.courseName||'Sin curso'}{x.notes?` · ${x.notes}`:''}</p></div><div className="flex gap-2"><button className="nox-btn" onClick={()=>start(x)}>Editar</button><button className="nox-btn danger" onClick={()=>onDeleteItem(x.id)}>Eliminar</button></div></div>)}{!data.length&&<div className="card-nox p-8 rounded-3xl text-center text-zinc-500">No hay entregables este mes.</div>}</div>
+ {open&&<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setOpen(false)}><div className="modal-card"><div className="flex justify-between mb-5"><h3 className="text-xl font-black">{editing?'Editar entregable':'Nuevo entregable'}</h3><button className="nox-icon" onClick={()=>setOpen(false)}>×</button></div><div className="space-y-3"><label className="field-label">Curso<select className="nox-input" value={form.courseId} onChange={e=>setForm({...form,courseId:e.target.value})}><option value="">Sin curso</option>{courses.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label className="field-label">Título<input className="nox-input" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label><div className="grid grid-cols-2 gap-3"><label className="field-label">Fecha límite<input type="date" className="nox-input" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></label><label className="field-label">Hora límite<input type="time" className="nox-input" value={form.time} onChange={e=>setForm({...form,time:e.target.value})}/></label></div><label className="field-label">Notas<textarea className="nox-input" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label><button className="w-full nox-primary" onClick={save}>{editing?'Guardar cambios':'Crear entregable'}</button></div></div></div>}
+ </div>;
 };
