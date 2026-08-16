@@ -1,60 +1,14 @@
-const { useState } = React;
-
-window.ParcialesSection = function ParcialesSection({ items = [], onAddItem }) {
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth());
-
-  const now = new Date();
-  const isCurrentMonth = now.getFullYear() === year && now.getMonth() === month;
-
-  const changeMonth = (dir) => {
-    let newMonth = month + dir;
-    let newYear = year;
-    if (newMonth > 11) { newMonth = 0; newYear++; }
-    if (newMonth < 0) { newMonth = 11; newYear--; }
-    setMonth(newMonth); setYear(newYear);
-  };
-
-  const monthName = new Date(year, month).toLocaleString('es-ES', { month: 'long' });
-  const semanas = [1, 2, 3, 4].map(num => `Semana ${num} - Parciales (${monthName} ${year})`);
-  const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 card-nox p-4 sm:p-6 rounded-3xl">
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl sm:text-2xl font-bold capitalize">Evaluaciones Parciales</h2>
-          {isCurrentMonth && (
-            <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-bold flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Mes Actual
-            </span>
-          )}
-        </div>
-
-        <div className="flex gap-2 items-center">
-          <button onClick={() => changeMonth(-1)} className="p-2 bg-zinc-900 hover:bg-zinc-800 rounded-xl active:scale-95 transition font-bold text-xs sm:text-sm">← Anterior</button>
-          <button onClick={() => changeMonth(1)} className="p-2 bg-zinc-900 hover:bg-zinc-800 rounded-xl active:scale-95 transition font-bold text-xs sm:text-sm">Siguiente →</button>
-        </div>
-      </div>
-
-      {semanas.map((semanaNom, semIdx) => (
-        <div key={semIdx} className="card-nox p-4 sm:p-5 rounded-3xl border-purple-900/30">
-          <h3 className="font-bold text-base sm:text-lg mb-4 text-purple-400 capitalize">{semanaNom}</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
-            {dias.map(dia => (
-              <div key={dia} className="p-2.5 rounded-2xl bg-zinc-950 border border-zinc-900 min-h-[100px] flex flex-col justify-between">
-                <span className="text-xs font-bold text-purple-400/80">{dia}</span>
-                <button 
-                  onClick={() => onAddItem({ type: 'parcial', title: `Parcial ${dia}`, date: new Date(year, month, (semIdx * 7) + 1).toISOString().split('T')[0] })}
-                  className="w-full mt-2 py-1.5 text-[10px] bg-purple-950/30 text-purple-400 rounded-lg hover:bg-purple-900/50 active:scale-95 transition"
-                >
-                  + Eval.
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+const {useState}=React;
+window.ParcialesSection=function ParcialesSection({items=[],courses=[],onAddItem,onUpdateItem,onDeleteItem}){
+ const [year,setYear]=useState(new Date().getFullYear()),[month,setMonth]=useState(new Date().getMonth()),[open,setOpen]=useState(false),[editing,setEditing]=useState(null);
+ const [form,setForm]=useState({title:'',date:'',time:'08:00',endTime:'10:00',courseId:'',notes:''});
+ const name=new Date(year,month).toLocaleString('es-ES',{month:'long'}),data=items.filter(i=>i.type==='parcial'&&new Date(i.date).getFullYear()===year&&new Date(i.date).getMonth()===month);
+ const move=d=>{let m=month+d,y=year;if(m>11){m=0;y++}if(m<0){m=11;y--}setMonth(m);setYear(y)};
+ const start=(x=null,day=15)=>{setEditing(x);setForm(x?{...x}:{title:'',date:new Date(year,month,day).toISOString().slice(0,10),time:'08:00',endTime:'10:00',courseId:'',notes:''});setOpen(true)};
+ const save=()=>{if(!form.title.trim()||!form.date)return alert('Completa nombre y fecha.');const c=courses.find(x=>x.id===form.courseId),item={...form,type:'parcial',courseName:c?.name||'',color:c?.color||'#8b5cf6',status:editing?.status||'pendiente'};editing?onUpdateItem(editing.id,item):onAddItem(item);setOpen(false)};
+ return <div className="space-y-6"><div className="card-nox p-4 sm:p-6 rounded-3xl flex flex-col sm:flex-row justify-between gap-4"><div><h2 className="text-xl sm:text-2xl font-bold">Evaluaciones Parciales</h2><p className="text-xs text-zinc-500">Ahora sí puedes añadir un parcial, elegir curso, día y horario.</p></div><div className="flex gap-2 items-center"><button className="nox-btn" onClick={()=>move(-1)}>←</button><span className="font-bold capitalize px-2">{name} {year}</span><button className="nox-btn" onClick={()=>move(1)}>→</button><button className="nox-primary" onClick={()=>start()}>+ Evaluación</button></div></div>
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[1,2,3,4].map(w=><div key={w} className="card-nox p-4 rounded-3xl"><h3 className="font-bold text-purple-400 mb-3">Semana {w}</h3>{Array.from({length:7}).map((_,i)=>{const day=Math.min(w*7-6+i,new Date(year,month+1,0).getDate()),found=data.filter(x=>new Date(x.date).getDate()===day);return <button key={i} onClick={()=>start(null,day)} className="w-full text-left p-2 rounded-xl hover:bg-zinc-900 border border-zinc-900 mb-1"><span className="text-xs text-zinc-500">{['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'][i]} {day}</span>{found.map(x=><div key={x.id} className="text-xs text-purple-300 truncate">{x.title}</div>)}<span className="text-[10px] text-zinc-600">+ evaluación</span></button>})}</div>)}</div>
+ <div className="space-y-2">{data.map(x=><div key={x.id} className="card-nox p-4 rounded-2xl flex justify-between gap-3"><div><b>{x.title}</b><p className="text-xs text-zinc-500">{x.date} · {x.time} · {x.courseName||'Sin curso'}</p></div><div className="flex gap-2"><button className="nox-btn" onClick={()=>start(x)}>Editar</button><button className="nox-btn danger" onClick={()=>onDeleteItem(x.id)}>Eliminar</button></div></div>)}</div>
+ {open&&<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setOpen(false)}><div className="modal-card"><div className="flex justify-between mb-5"><h3 className="text-xl font-black">{editing?'Editar parcial':'Nuevo parcial'}</h3><button className="nox-icon" onClick={()=>setOpen(false)}>×</button></div><div className="space-y-3"><label className="field-label">Curso<select className="nox-input" value={form.courseId} onChange={e=>setForm({...form,courseId:e.target.value})}><option value="">Sin curso</option>{courses.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label className="field-label">Nombre<input className="nox-input" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Parcial de Ingeniería de Software"/></label><div className="grid grid-cols-3 gap-3"><label className="field-label">Fecha<input type="date" className="nox-input" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}/></label><label className="field-label">Inicio<input type="time" className="nox-input" value={form.time} onChange={e=>setForm({...form,time:e.target.value})}/></label><label className="field-label">Fin<input type="time" className="nox-input" value={form.endTime} onChange={e=>setForm({...form,endTime:e.target.value})}/></label></div><label className="field-label">Notas<textarea className="nox-input" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label><button className="w-full nox-primary" onClick={save}>{editing?'Guardar cambios':'Crear evaluación'}</button></div></div></div>}
+ </div>;
 };
