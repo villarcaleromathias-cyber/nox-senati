@@ -955,12 +955,111 @@ const SCHEMA = {
 
     item: {
       type: 'object',
-      additionalProperties: true
+
+      additionalProperties: false,
+
+      properties: {
+
+        id: {
+          type: 'string'
+        },
+
+        type: {
+          type: 'string'
+        },
+
+        title: {
+          type: 'string'
+        },
+
+        date: {
+          type: 'string'
+        },
+
+        time: {
+          type: 'string'
+        },
+
+        endTime: {
+          type: 'string'
+        },
+
+        courseId: {
+          type: 'string'
+        },
+
+        courseName: {
+          type: 'string'
+        },
+
+        notes: {
+          type: 'string'
+        },
+
+        color: {
+          type: 'string'
+        },
+
+        status: {
+          type: 'string'
+        }
+      },
+
+      required: [
+        'id',
+        'type',
+        'title',
+        'date',
+        'time',
+        'endTime',
+        'courseId',
+        'courseName',
+        'notes',
+        'color',
+        'status'
+      ]
     },
 
     course: {
       type: 'object',
-      additionalProperties: true
+
+      additionalProperties: false,
+
+      properties: {
+
+        id: {
+          type: 'string'
+        },
+
+        name: {
+          type: 'string'
+        },
+
+        teacher: {
+          type: 'string'
+        },
+
+        room: {
+          type: 'string'
+        },
+
+        color: {
+          type: 'string'
+        },
+
+        notes: {
+          type: 'string'
+        }
+      },
+
+      required: [
+        'id',
+        'name',
+        'teacher',
+        'room',
+        'color',
+        'notes'
+      ]
     }
   },
 
