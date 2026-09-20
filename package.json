@@ -1,17 +1,29 @@
-{
-  "name": "nox-agenda-senati",
-  "version": "1.0.0",
-  "description": "Agenda SENATI con Asistente Aurora IA y conexión a Google Drive (actualización con gestión completa)",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "firebase-admin": "^12.7.0",
-    "googleapis": "^146.0.0",
-    "multer": "^2.0.2"
-  }
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#09090b">
+  <title>Nox - Agenda SENATI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-black text-white font-sans antialiased selection:bg-purple-500 selection:text-white">
+  <div id="root"></div>
+  <script type="text/babel" src="./js/Examenes.js"></script>
+  <script type="text/babel" src="./js/Clases.js"></script>
+  <script type="text/babel" src="./js/Parciales.js"></script>
+  <script type="text/babel" src="./js/Entregables.js"></script>
+  <script type="text/babel" src="./js/Calendario.js"></script>
+  <script type="text/babel" src="./js/Cursos.js"></script>
+  <script type="text/babel" src="./js/Aurora.js"></script>
+  <script type="text/babel" src="./js/app.js"></script>
+</body>
+</html>
