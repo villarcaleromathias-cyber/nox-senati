@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
 const { google } = require('googleapis');
+const firebaseAdmin = require('firebase-admin');
 
 require('dotenv').config();
 
@@ -14,6 +15,7 @@ const PORT = process.env.PORT || 3000;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID || '';
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'nexo-7bcde';
 
 // Google OAuth 2.0: usa exactamente los nombres configurados en Render.
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -53,6 +55,33 @@ const safeJson = (value, fallback = null) => {
 };
 
 const uid = () => crypto.randomUUID();
+
+if (!firebaseAdmin.apps.length) {
+  firebaseAdmin.initializeApp({ projectId: FIREBASE_PROJECT_ID });
+}
+
+async function requireFirebaseUser(req, res, next) {
+  try {
+    const authorization = req.headers.authorization || '';
+    const idToken = authorization.startsWith('Bearer ')
+      ? authorization.slice(7)
+      : '';
+
+    if (!idToken) {
+      return res.status(401).json({ error: 'Inicia sesión con Google para continuar.' });
+    }
+
+    req.firebaseUser = await firebaseAdmin.auth().verifyIdToken(idToken);
+    next();
+  } catch (error) {
+    console.error('Firebase Auth:', error.message);
+    res.status(401).json({ error: 'La sesión venció. Vuelve a iniciar sesión.' });
+  }
+}
+
+app.use('/api/chat', requireFirebaseUser);
+app.use('/api/assistant', requireFirebaseUser);
+app.use('/api/drive', requireFirebaseUser);
 
 /* ================================================================
    NORMALIZACIÓN
@@ -1862,7 +1891,7 @@ app.post(
 
           actions,
 
-          true
+          false
         );
 
       let message;
